@@ -76,7 +76,7 @@ let package = Package(
         .package(url: "https://github.com/pointfreeco/xctest-dynamic-overlay", from: "1.1.2"),
         .package(url: "https://github.com/Quick/Nimble", from: "13.0.0"),
         .package(url: "https://github.com/siteline/swiftui-introspect", from: "26.0.0"),
-        .package(url: "https://github.com/zxing-cpp/zxing-cpp", from: "2.2.1"),
+        .package(url: "https://github.com/zxing-cpp/zxing-cpp", from: "3.1.1"),
         .package(url: "https://github.com/gematik/ASN1Kit", from: "1.2.1"),
         .package(url: "https://github.com/gematik/OpenSSL-Swift", from: "4.2.0"),
         .package(url: "https://github.com/gematik/swift-gemPDFKit", from: "0.2.2"),
