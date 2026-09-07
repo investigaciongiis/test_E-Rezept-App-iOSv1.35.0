@@ -309,8 +309,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/zxing-cpp/zxing-cpp",
       "state" : {
-        "revision" : "d6068bcebeb8fd9f0d35a99b00d202be86a14dbe",
-        "version" : "2.3.0"
+        "revision" : "287c85df6f961c8efbfb5ffd736cd9457b8b890e",
+        "version" : "3.1.1"
       }
     }
   ],
