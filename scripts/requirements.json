@@ -1,16 +1,19 @@
 {
   "metadata": {
     "schema": "secm-cat-requirements-with-flags-v1",
-    "generated_at": "2026-09-03"
+    "generated_at": "2026-09-03",
+    "platform": "iOS/iPadOS",
+    "catalog_revision": "ios-native-v1",
+    "revised_at": "2026-09-03"
   },
   "requirements_count": 462,
   "requirements": [
     {
       "PUID": "SECM-CAT-ICU-001",
-      "Requirement description": "The mobile application should not contain hardcoded details of external resources, credentials, or API keys to prevent unauthorized access and secure the app from vulnerabilities.",
-      "Source": "SRG-APP-000516-MAPP-000064: The mobile app code must not contain hardcoded references to resources external to the app [17]. SRG-APP-000033-MAPP-000012: A mobile app must not call APIs or otherwise invoke resources external to the mobile app unless such activity serves the documented purposes of the mobile app [17]. Avoid Using Hardcoded Credentials: Hardcoded credentials can be easily discovered by attackers and provide an easy access point for unauthorized users. Always avoid using hardcoded credentials in your mobile app’s code or configuration files [3]. 3.9.Do not store any passwords or secrets in the application binary. Do not use a generic shared secret for integration with the backend server (like password embedded in code). Mobile application binaries can be easily downloaded and reverse engineered [16]. CWE-798: Use of Hard-coded Credentials\nThe product contains hard-coded credentials, such as a password or cryptographic key, which it uses for its own inbound authentication, outbound communication to external components, or encryption of internal data [35].\nApple Inc., Security framework [156].\nApple Inc., Keychain data protection [157].",
+      "Requirement description": "The application must not embed credentials, private cryptographic keys, secret API keys, or other reusable authentication material in source code, configuration committed to version control, build logs, artifacts, or the application bundle. Non-secret public service endpoints may be embedded only when documented and environment appropriate.",
+      "Source": "OWASP MASVS-STORAGE; CWE-798; Apple Inc., Keychain data protection; Apple Inc., Security framework.",
       "Priority": "Not described",
-      "Rationale": "This requirement helps decrease the potential threat of hardcoded credentials and data/coming out with mobile software. Reverse engineering: Hardcoded elements like API keys, passwords, or cryptographic secrets can be dropped via simple disassembly and are a common security threat. If left unsecured, unauthorized users could potentially tamper with these elements to access the backend systems, external services, or secured data within the application, which would result in a breakdown of how confidential and integral the whole application and its users are.",
+      "Rationale": "Credentials and reusable secret material embedded in an application can be recovered from source history, build artifacts, or a reverse-engineered binary. Public endpoint URLs and identifiers are not secrets by themselves, so treating every hardcoded external reference as a credential creates false findings.",
       "Number of Children": "2",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -21,8 +24,8 @@
       "Importance": "95",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Perform a code review to check the codebase for hard-coded credentials or references to external resources.\nSecuritize Your Keys, Passwords, and Secrets — Store these securely in environment variables or with an OS service like the secure key-management service.\nMake sure that credentials are never hardcoded and security practices are held to secure your confidential information.\nLook at the binary to see that someone cannot reverse-engineer it to extract secrets.\nConfirm that 2nd-level approval is mandated wherever required.",
-      "controles": "The mobile application should not contain hardcoded details of external resources, credentials, or API keys to prevent unauthorized access and secure the app from vulnerabilities.",
+      "Validation criteria": "Secret inventory:\nDefine which values are credentials, reusable secrets, private keys, public identifiers, and public endpoints.\nRepository and history review:\nScan current source, configuration, generated files, fixtures, and version-control history for secret material. Validate findings rather than classifying values solely by variable name.\nBuild and binary review:\nInspect build logs, archives, IPA contents, Mach-O strings, resources, xcconfig files, and generated Swift for embedded secret values.\nEndpoint review:\nVerify that embedded public endpoints serve documented application purposes and select the intended environment. Do not classify a public URL as a secret without additional evidence.\nExpected result:\nNo reusable credential or secret is recoverable from the repository or delivered application; public endpoints are documented and environment appropriate.",
+      "controles": "The application must not embed credentials, private cryptographic keys, secret API keys, or other reusable authentication material in source code, configuration committed to version control, build logs, artifacts, or the application bundle. Non-secret public service endpoints may be embedded only when documented and environment appropriate.",
       "Flags": [
         "has_hardcoded_credentials",
         "has_api_keys_in_version_control"
@@ -123,10 +126,10 @@
     },
     {
       "PUID": "SECM-CAT-ISU-002",
-      "Requirement description": "Applications must not change the SSL verification method that can allow self-signed certificates. Self-signed certificates or a local Certificate Authority (CA) must be used during development to keep with good SSL practices.",
-      "Source": "General Best Practices: 13. During development cycles, avoid overriding SSL verification methods to allow untrusted certificates, instead try using self-signed certificates or a local development certificate authority (CA) [3].",
+      "Requirement description": "Production builds must use the iOS default server-trust evaluation or a correctly implemented stricter trust policy and must never accept certificates solely because they are self-signed, issued by an untrusted authority, expired, or invalid for the requested host. Development trust exceptions must be isolated from production builds.",
+      "Source": "OWASP MASVS-NETWORK; Apple Inc., Performing manual server trust authentication; Apple Inc., Preventing insecure network connections.",
       "Priority": "Not described",
-      "Rationale": "Enforce secured development cycles to follow proper SSL/TLS practices. Like anything else, bypassing SSL verification and letting untrusted certificates be validated comes with security trade-offs: the app is opening itself up to man-in-the-middle (MITM) attacks among other risks. See the news with that self-signed certificate or local CA, without disrupting the verification process, is a very useful aspect for securely testing SSL connections in developers. This means that one has to present valid SSL verification when running on external URLs in order for any insecure configs not to be deployed by accident into production.",
+      "Rationale": "Development environments may use a private CA installed as a trusted anchor on controlled devices, but application code must not bypass trust evaluation. Separating development configuration from production avoids the contradiction between using a development CA and accepting untrusted certificates.",
       "Number of Children": "0",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -137,8 +140,8 @@
       "Importance": "95",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "SSL Verification Check:\nEnsure that SSL Verification mechanisms are not overridden to trust untrusted certificates on dev/production builds.\nTo use a self-signed or local CA for SSL connections specially made during development.\nVerify that the application never accepts untrusted certificates at any point of the software development life cycle.",
-      "controles": "Applications must not change the SSL verification method that can allow self-signed certificates. Self-signed certificates or a local Certificate Authority (CA) must be used during development to keep with good SSL practices.",
+      "Validation criteria": "Production review:\nInspect URLSession authentication challenges, Network framework TLS options, Security-framework trust evaluation, Info.plist, build settings, and conditional compilation. Verify that production uses system trust or a correctly implemented stricter policy.\nInvalid-certificate testing:\nTest self-signed, untrusted-root, expired, hostname-mismatched, revoked where supported, and malformed certificate chains. All must fail unless the chain terminates at an explicitly authorized trust anchor and satisfies the complete policy.\nDevelopment configuration:\nIf a private development CA is used, verify that trust is established through controlled device or simulator configuration and that development roots, exceptions, and bypass code cannot enter a production archive.\nExpected result:\nProduction never disables certificate or hostname validation, and development trust configuration is isolated and documented.",
+      "controles": "Production builds must use the iOS default server-trust evaluation or a correctly implemented stricter trust policy and must never accept certificates solely because they are self-signed, issued by an untrusted authority, expired, or invalid for the requested host. Development trust exceptions must be isolated from production builds.",
       "Flags": [
         "ios_certificate_pinning",
         "ios_ats_arbitrary_loads"
@@ -536,10 +539,10 @@
     },
     {
       "PUID": "SECM-CAT-ISU-019",
-      "Requirement description": "The app should not store any biometric data or private keys on the client device, thus would store and process sensitive data only on the server.",
-      "Source": "1.2.Store and process sensitive data on the server instead of the client-end device. Highly sensitive data (e.g., biometric data, private keys) should not be transported from the component that were initially created [16].",
+      "Requirement description": "The application must not collect or persist raw biometric data. Cryptographic private keys may be stored or generated on the device only through an iOS platform-protected mechanism such as Keychain or Secure Enclave, using non-exportable keys and user-presence or biometric access control when appropriate.",
+      "Source": "Apple Inc., LocalAuthentication; Apple Inc., Keychain data protection; Apple Inc., Secure Enclave; OWASP MASVS-AUTH and MASVS-CRYPTO.",
       "Priority": "Not described",
-      "Rationale": "There is an increasing necessity to protect sensitive data, especially for healthcare applications — the security and privacy of biometric data, private keys, and highly sensitive data is essential. Sensitive data is better protected against unauthorized access, theft, or tampering than on client devices when it is kept and processed on secure servers. Furthermore, sensitive data remain in the environment in which they were originally created, eliminating the need for transferring data that can be intercepted, in turn improving compliance toward healthcare data security standards.",
+      "Rationale": "Applications receive authentication results from LocalAuthentication rather than raw biometric templates. Prohibiting every device-held private key conflicts with secure iOS designs: Secure Enclave exists specifically to generate and use non-exportable private keys without exposing key material to the application.",
       "Number of Children": "0",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -550,8 +553,8 @@
       "Importance": "96",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Check for the Data Storage and Processing:\nEnsure that sensitive data like biometric data and private keys are stored and processed only on the server.\nDo not transfer sensitive data to (or process it on) a client device.\nServer Security Assessment:\nEnsure the server environment is up to security best practices, including but not limited to; access control and encryption, especially for sensitive data.\nA test I struggle with: Data transfer limit\nAttempt to exfiltrate sensitive data from the server to a client device and ensure that such operations are denied.",
-      "controles": "The app should not store any biometric data or private keys on the client device, thus would store and process sensitive data only on the server.",
+      "Validation criteria": "Biometric-data review:\nVerify that the application does not request, derive, log, transmit, or persist raw biometric measurements or templates. Confirm that biometric authentication uses LocalAuthentication or Keychain access control.\nPrivate-key inventory:\nIdentify every private key and document its purpose, origin, accessibility, exportability, synchronization, backup behavior, and lifecycle.\nPlatform-protection review:\nFor device-held keys, inspect Keychain attributes, Secure Enclave token identifiers, SecAccessControl flags, accessibility classes, and device-only protection. Verify that non-exportable keys are preferred where supported.\nLifecycle testing:\nTest device lock, biometric enrollment changes, passcode removal, logout, account removal, backup migration, and key rotation as applicable.\nExpected result:\nNo raw biometric data is handled by the app and device-held private keys remain non-exportable and protected according to their use case.",
+      "controles": "The application must not collect or persist raw biometric data. Cryptographic private keys may be stored or generated on the device only through an iOS platform-protected mechanism such as Keychain or Secure Enclave, using non-exportable keys and user-presence or biometric access control when appropriate.",
       "Flags": [
         "has_os_secure_key_storage",
         "has_stores_keys_in_plaintext",
@@ -1142,10 +1145,10 @@
     },
     {
       "PUID": "SECM-CAT-ISU-044",
-      "Requirement description": "Disable JavaScript for WKWebView components unless it is explicitly required for the functionality of the application and configure WKWebView components securely to avoid vulnerabilities such as XSS or sensitive data portion leakage.",
-      "Source": "6.5: Verify that JavaScript is disabled in WebViews unless explicitly required [19]. MASVS-PLATFORM-2: The app performs identity pinning for all remote endpoints under the developer’s control: WebViews are typically used by apps that have a need for increased control over the UI. This control ensures that WebViews are configured securely to prevent sensitive data leakage as well as sensitive functionality exposure (e.g. via JavaScript bridges to native code) [20].\nApple Inc., WKWebView [165].\nApple Inc., Protecting the user's privacy [168].",
+      "Requirement description": "JavaScript must be disabled in WKWebView unless it is explicitly required for documented application functionality. When enabled, the WKWebView must restrict content, navigation, data access, and native interfaces according to least privilege.",
+      "Source": "OWASP MASVS-PLATFORM; Apple Inc., WKWebView; Apple Inc., WKWebpagePreferences; Apple Inc., Protecting the user's privacy.",
       "Priority": "Not described",
-      "Rationale": "This ensures that JavaScript executed in a WKWebView components used in a healthcare application cannot perform actions that violate HIPAA or PHI exposure rules. To use JavaScript or not; the answer is clear: disable JavaScript by default and only use it when the need justifies it for the functionality of your application. The use of WKWebView components with a secure configuration also provides additional mitigation against risks associated with unauthorized access to or exposure to sensitive functionality.",
+      "Rationale": "Unnecessary JavaScript increases the attack surface of embedded web content. On iOS, JavaScript execution is controlled through WKWebViewConfiguration and WKWebpagePreferences. Where JavaScript is required, trusted origins, navigation, persistent data, file access, and access to native functionality must be restricted.",
       "Number of Children": "0",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -1156,8 +1159,8 @@
       "Importance": "92",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "How JavaScript Configuration Testing Works:\nEnsure that JavaScript is disabled in all WKWebView components by default.\nMake sure the setJavaScriptEnabled() method is invoked only when needed and documented.\nTo Test Cross-Site Scripting (XSS):\nPerform XSS vulnerabilities test in WKWebView components and ensure the app is able to mitigate these attacks.\nCode Review for WKWebView components Use:\nReviewing Application Code for WKWebView components instances and verify if it follows secure configuration practices",
-      "controles": "Disable JavaScript for WKWebView components unless it is explicitly required for the functionality of the application and configure WKWebView components securely to avoid vulnerabilities such as XSS or sensitive data portion leakage.",
+      "Validation criteria": "Applicability:\nIdentify every WKWebView and determine whether JavaScript is required. If no WKWebView exists, record the requirement as not applicable.\nConfiguration review:\nInspect WKWebViewConfiguration and WKWebpagePreferences. Verify that allowsContentJavaScript is false by default and is enabled only for a documented use case.\nContent and navigation testing:\nFor WKWebViews with JavaScript enabled, test untrusted navigation, script injection, local-file access, redirects, pop-ups, and access to sensitive application data.\nNative interface review:\nVerify that JavaScript cannot invoke sensitive native functionality except through explicitly defined, authenticated, validated, and least-privilege message handlers.\nExpected result:\nJavaScript is disabled when unnecessary. Any enabled JavaScript is limited to approved content and cannot expose sensitive data or native functionality.",
+      "controles": "JavaScript must be disabled in WKWebView unless it is explicitly required for documented application functionality. When enabled, the WKWebView must restrict content, navigation, data access, and native interfaces according to least privilege.",
       "Flags": [
         "has_webview_components",
         "has_webview_javascript"
@@ -1188,10 +1191,10 @@
     },
     {
       "PUID": "SECM-CAT-ISU-046",
-      "Requirement description": "The WKWebView components must restrict JavaScript execution to only JS within the app package, and properly configured WKWebView components must not leak sensitive data or functionality.",
-      "Source": "6.8: Verify that if Java objects are exposed in a WebView, verify that the WebView only renders JavaScript contained within the app package [19]. MASVS-PLATFORM-2: The app performs identity pinning for all remote endpoints under the developer’s control: WebViews are typically used by apps that have a need for increased control over the UI. This control ensures that WebViews are configured securely to prevent sensitive data leakage as well as sensitive functionality exposure (e.g. via JavaScript bridges to native code) [20].\nApple Inc., Security framework [156].\nApple Inc., WKWebView [165].",
+      "Requirement description": "WKWebView must execute scripts only from explicitly approved local content or trusted origins. Native interfaces exposed through WKScriptMessageHandler or equivalent mechanisms must not be accessible to untrusted content or disclose sensitive data or functionality.",
+      "Source": "OWASP MASVS-PLATFORM; Apple Inc., WKWebView; Apple Inc., WKUserContentController; Apple Inc., WKScriptMessageHandler.",
       "Priority": "Not described",
-      "Rationale": "This requirement ensures incorrect, untrusted Java objects are not exposed to the WKWebView components; only trusted, app-packaged JavaScript is accessible. This reduces the risk of data leakage, unauthorized access to sensitive application functionality, and similar concerns. The application both preserves healthcare data integrity and controls operational security by enforcing secure WKWebView components configurations and JavaScript sources.",
+      "Rationale": "WKWebView bridges can allow web content to invoke native application functionality. Restricting script sources, content origins, content worlds, and message handlers prevents untrusted content from crossing the web-to-native security boundary.",
       "Number of Children": "0",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -1202,8 +1205,8 @@
       "Importance": "90",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "These are as follows: Java Object Exposure Validation:\nEnsure that any Java objects exposed in WKWebView components are only callable by the JavaScript code within the application package.\nEnsure that untrusted JavaScript cannot access hooked Java objects.\nTesting Configuration of Secure WKWebView components\nEnsure WKWebView components are configured to mitigate sensitive data leakage and unauthorized access to app functionality.\nDo not create any inadvertent JS bridges between your native code and your WKWebView components.\nIdentity Pinning Testing:\nEnsure the application is pinning identities in communication channels to all remote endpoints accessed through WKWebView components.\nUsing JavaScript and WKWebView components — Code Review\nPerform a code review to validate the correct application of secure WKWebView components configurations and limitations on JavaScript sources.",
-      "controles": "The WKWebView components must restrict JavaScript execution to only JS within the app package, and properly configured WKWebView components must not leak sensitive data or functionality.",
+      "Validation criteria": "Applicability:\nIdentify WKWebViews that execute JavaScript or expose native message handlers. If neither feature exists, record this control as not applicable and evaluate the general WKWebView configuration separately.\nScript-source review:\nVerify that executable scripts originate only from approved bundled resources or explicitly trusted origins. Test redirects and attempts to introduce untrusted scripts.\nMessage-handler review:\nInspect WKUserContentController, WKScriptMessageHandler, WKScriptMessageHandlerWithReply, content worlds, and handler registration and removal.\nInput and authorization testing:\nSend malformed, oversized, replayed, and unauthorized messages. Verify schema validation, origin and navigation restrictions, authorization checks, least privilege, and secure failure.\nLifecycle testing:\nVerify that handlers are removed when no longer required and do not create avoidable retention cycles.\nExpected result:\nUntrusted content cannot execute approved-only scripts, invoke native interfaces, or access sensitive data or functionality.",
+      "controles": "WKWebView must execute scripts only from explicitly approved local content or trusted origins. Native interfaces exposed through WKScriptMessageHandler or equivalent mechanisms must not be accessible to untrusted content or disclose sensitive data or functionality.",
       "Flags": [
         "has_wkwebview_safe_message_handlers",
         "has_webview_components"
@@ -1428,10 +1431,10 @@
     },
     {
       "PUID": "SECM-CAT-ISU-056",
-      "Requirement description": "The application must request the READ_SMS permission only when absolutely necessary, minimize its usage, and securely handle SMS data to prevent misuse or exploitation by malicious third parties.",
-      "Source": "Apple Inc., Entitlements [159].",
+      "Requirement description": "The application must not access SMS message content. If one-time authentication codes received by SMS are supported, the application must use iOS system-provided mechanisms, require a user-initiated authentication flow, and prevent the codes from being unnecessarily stored, logged, transmitted, or disclosed.",
+      "Source": "Apple Inc., UITextContentType.oneTimeCode; Apple Inc., Enabling Password AutoFill on a text input view; OWASP MASVS-AUTH.",
       "Priority": "Not described",
-      "Rationale": "This requirement ensures that the application adheres to the principle of least privilege by requesting READ_SMS permission only when essential. Minimizing the use of this permission reduces the risk of SMS data being exposed to unauthorized applications or malicious actors. Secure handling of SMS messages protects sensitive user data and ensures compliance with privacy standards in healthcare applications.",
+      "Rationale": "Third-party iOS applications must not attempt to access the user's SMS inbox or message database. System-provided one-time-code AutoFill lets the user control insertion without granting inbox access. Limiting the code's lifetime and exposure reduces account-compromise risk.",
       "Number of Children": "0",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -1442,11 +1445,12 @@
       "Importance": "97",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Permission Request Validation:\nVerify that the READ_SMS permission is requested only if it is essential for the application’s functionality.\nConfirm that the application includes a clear justification for requesting this permission.\nPermission Minimization Validation:\nConfirm that the application minimizes the use of the READ_SMS permission and restricts its use to specific, necessary operations.\nCode Review for Permission Handling:\nConduct a code review to ensure that the request for READ_SMS permission aligns with the application's functionality and adheres to secure coding practices.\nSecurity Logging Validation:\nVerify that the application logs all instances of SMS data access securely and monitors for any unusual or unauthorized use of the READ_SMS permission.",
-      "controles": "The application must request the READ_SMS permission only when absolutely necessary, minimize its usage, and securely handle SMS data to prevent misuse or exploitation by malicious third parties.",
+      "Validation criteria": "Applicability:\nDetermine whether the application supports authentication or verification codes delivered by SMS. If SMS-based codes are not used, record the requirement as not applicable.\nSMS access review:\nInspect source code, dependencies, entitlements, privacy declarations, and the built application. Confirm that the application does not attempt to access the SMS inbox, SMS database, or message content.\nOne-time-code handling:\nIf SMS codes are supported, verify use of UITextContentType.oneTimeCode or an equivalent iOS system mechanism, within a user-initiated flow in which the user controls submission.\nExposure testing:\nInspect logs, analytics, crash reports, persistent storage, backups, pasteboard operations, and network requests. Confirm that complete codes are not unnecessarily retained or disclosed.\nLifecycle testing:\nVerify that a code is accepted only for its intended transaction and is discarded after use, rejection, or expiration.\nExpected result:\nNo SMS inbox access occurs and any SMS-delivered code is handled through an appropriate iOS mechanism without unnecessary exposure.",
+      "controles": "The application must not access SMS message content. If one-time authentication codes received by SMS are supported, the application must use iOS system-provided mechanisms, require a user-initiated authentication flow, and prevent the codes from being unnecessarily stored, logged, transmitted, or disclosed.",
       "Flags": [
-        "ios_sensitive_permissions_present",
-        "has_supports_runtime_permission_management"
+        "has_sms_otp_flow",
+        "uses_ios_one_time_code_autofill",
+        "has_otp_sensitive_data_exposure"
       ]
     },
     {
@@ -2942,10 +2946,10 @@
     },
     {
       "PUID": "SECM-CAT-IAA-060",
-      "Requirement description": "The application must implement federated identity management and modern authentication methods, such as passkeys and Credential Manager, to securely authenticate users and protect access to private data and sensitive operations.",
-      "Source": "MASVS-AUTH-3: The app secures sensitive operations with additional authentication: Some additional form of authentication is often desirable for sensitive actions inside the app. This can be done in different ways (biometric, pin, MFA code generator, email, deep links, etc) and they all need to be implemented securely [20].\nApple Inc., Keychain data protection [157].\nApple Inc., Associated Domains Entitlement [163].\nApple Inc., Local Authentication [164].",
+      "Requirement description": "Where federated or passwordless authentication is part of the documented authentication design, the application must use standards-based identity protocols and Apple AuthenticationServices or another approved platform mechanism for passkeys and credential handling.",
+      "Source": "OWASP MASVS-AUTH; Apple Inc., AuthenticationServices; Apple Inc., Supporting passkeys; Apple Inc., LocalAuthentication.",
       "Priority": "Not described",
-      "Rationale": "Federated identity management streamlines authentication while maintaining security by leveraging trusted identity providers. Requiring modern authentication methods ensures strong protection of private data and supports secure access for sensitive operations, reducing the risk of unauthorized access.",
+      "Rationale": "Federated identity and passkeys can reduce password-related risk when implemented with platform APIs and standards-based server validation. These mechanisms are conditional capabilities and must not be required when they are outside the application's documented identity architecture.",
       "Number of Children": "0",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -2956,12 +2960,13 @@
       "Importance": "87",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Federated Identity Testing:\nVerify that the application integrates with federated identity providers, such as Sign in with Google, for user authentication.\nModern Authentication Validation:\nConfirm that modern authentication methods, such as passkeys and Credential Manager, are implemented for private data access.\nSensitive Operation Authentication Test:\nTest that additional authentication, such as biometrics or MFA, is required for sensitive operations within the application.\nConfiguration Review:\nEnsure that the application’s configuration enforces federated identity and modern authentication requirements.\nCode Review for Authentication Mechanisms:\nAnalyze the implementation of federated identity and modern authentication methods to ensure compliance with security best practices.\nPenetration Testing:\nAttempt to bypass authentication mechanisms for private data and sensitive operations, ensuring that they are robust against attacks.",
-      "controles": "The application must implement federated identity management and modern authentication methods, such as passkeys and Credential Manager, to securely authenticate users and protect access to private data and sensitive operations.",
+      "Validation criteria": "Applicability:\nReview the documented identity architecture. If federated or passwordless authentication is not part of the intended design, record the corresponding part as not applicable.\nPlatform integration:\nFor passkeys, inspect AuthenticationServices integration, relying-party identifiers, associated domains, challenge generation, user verification, and server-side assertion validation.\nFederated identity:\nVerify use of a current standards-based protocol such as OpenID Connect or OAuth 2.0 with PKCE where applicable. Validate redirect URIs, state, nonce, issuer, audience, signature, and token lifetime.\nSensitive operations:\nVerify that sensitive operations require authentication strength appropriate to their risk and cannot be authorized solely by client-side state.\nExpected result:\nImplemented federated or passwordless mechanisms use approved iOS APIs and receive complete server-side validation.",
+      "controles": "Where federated or passwordless authentication is part of the documented authentication design, the application must use standards-based identity protocols and Apple AuthenticationServices or another approved platform mechanism for passkeys and credential handling.",
       "Flags": [
         "has_sso_mechanisms",
         "has_oauth2_authentication",
-        "has_token_based_auth"
+        "has_token_based_auth",
+        "has_secure_local_authentication"
       ]
     },
     {
@@ -3097,10 +3102,10 @@
     },
     {
       "PUID": "SECM-CAT-IAA-066",
-      "Requirement description": "The application must purge credentials or keys from memory immediately after use to minimize exposure, using explicit memory management rather than relying on automatic garbage collection.",
-      "Source": "3.4.Consider purging credentials or keys from memory after use. Avoid automatic memory managed structures (e.g., controlled by garbage collector) and immutable objects for maintaining the keys. Prefer to immediately zero out the memory containing the data after use rather than waiting for the garbage collection mechanism [16].",
+      "Requirement description": "Credentials, tokens, and cryptographic key material must remain in application memory only for the minimum necessary time. The application must minimize copies and use explicit zeroization for mutable sensitive buffers when technically effective, while preferring Keychain, Secure Enclave, and non-exportable keys.",
+      "Source": "OWASP MASVS-STORAGE; Apple Inc., Keychain data protection; Apple Inc., Secure Enclave; Apple Inc., Swift memory safety.",
       "Priority": "Not described",
-      "Rationale": "Purging credentials or keys from memory after use mitigates the risk of unauthorized access to sensitive data. Avoiding reliance on automatic memory management ensures proactive and secure handling of sensitive information.",
+      "Rationale": "Swift uses automatic reference counting and value semantics, so forbidding automatic memory management is neither realistic nor verifiable. Exposure is reduced by avoiding unnecessary plaintext material, shortening lifetime, minimizing copies, using mutable buffers where zeroization is meaningful, and keeping keys in platform-protected services.",
       "Number of Children": "0",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -3111,8 +3116,8 @@
       "Importance": "92",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Memory Purge Testing:\nVerify that credentials or keys are explicitly removed from memory after their use.\nStatic Code Analysis:\nEnsure no automatic memory management mechanisms are used for handling sensitive data like credentials or keys.\nRuntime Memory Inspection:\nTest the application during runtime to confirm that sensitive data is not left in memory after it has been used.\nImmediate Zeroing Verification:\nValidate that the memory allocated for credentials or keys is overwritten with zeros immediately after use.\nSecurity Review of Key Handling:\nConfirm that immutable objects are avoided when dealing with sensitive data to prevent unintentional persistence in memory.\nPenetration Testing:\nSimulate attacks to extract credentials or keys from application memory to validate that sensitive information is properly purged.",
-      "controles": "The application must purge credentials or keys from memory immediately after use to minimize exposure, using explicit memory management rather than relying on automatic garbage collection.",
+      "Validation criteria": "Data-flow review:\nIdentify credentials, tokens, PINs, one-time codes, and exported key material held in memory. Verify that their scope and lifetime are minimized and that unnecessary String conversions and copies are avoided.\nPlatform storage review:\nVerify that reusable credentials and keys are held in Keychain or Secure Enclave where appropriate and that non-exportable keys are preferred.\nZeroization review:\nWhere the application owns a mutable buffer containing sensitive material, verify use of an optimization-resistant zeroization mechanism when technically effective. Do not treat ARC alone as a failure.\nRuntime testing:\nWhere risk warrants it, inspect process memory after logout, cancellation, expiration, and completion of sensitive operations.\nExpected result:\nSensitive material is not retained longer than needed; avoidable copies are absent; and app-owned mutable buffers are cleared where reliable zeroization is possible.",
+      "controles": "Credentials, tokens, and cryptographic key material must remain in application memory only for the minimum necessary time. The application must minimize copies and use explicit zeroization for mutable sensitive buffers when technically effective, while preferring Keychain, Secure Enclave, and non-exportable keys.",
       "Flags": [
         "has_sensitive_memory_cleanup"
       ]
@@ -3192,10 +3197,10 @@
     },
     {
       "PUID": "SECM-CAT-IAA-072",
-      "Requirement description": "The application must implement alternative access controls, such as signature-level protection for inter-process communication (IPC) and adaptive authentication techniques, to enhance security without over-reliance on user-confirmed permissions.",
-      "Source": "MASVS-AUTH-3: The app secures sensitive operations with additional authentication: Some additional form of authentication is often desirable for sensitive actions inside the app. This can be done in different ways (biometric, pin, MFA code generator, email, deep links, etc) and they all need to be implemented securely [20]. IA-10 ADAPTIVE AUTHENTICATION\nControl: Require individuals accessing the system to employ [Assignment: organization-defined supplemental authentication techniques or mechanisms] under specific [Assignment: organization-defined circumstances or situations]. Discussion: Adversaries may compromise individual authentication mechanisms employed by organizations and subsequently attempt to impersonate legitimate users. To address this threat, organizations may employ specific techniques or mechanisms and establish protocols to assess suspicious behavior. Suspicious behavior may include accessing information that individuals do not typically access as part of their duties, roles, or responsibilities; accessing greater quantities of information than individuals would routinely access; or attempting to access information from suspicious network addresses. When pre-established conditions or triggers occur, organizations can require individuals to provide additional authentication information. Another potential use for adaptive authentication is to increase the strength of mechanism based on the number or types of records being accessed. Adaptive authentication does not replace and is not used to avoid the use of multi-factor authentication mechanisms but can augment implementations of multi-factor authentication [11].\nApple Inc., Preventing Insecure Network Connections [158].\nApple Inc., App Groups Entitlement [162].\nApple Inc., App code signing process in iOS, iPadOS, tvOS, visionOS and watchOS [167].",
+      "Requirement description": "Externally reachable iOS interfaces must rely on platform-enforced identity and least-privilege access controls, and sensitive operations must require additional or adaptive authentication when defined by the application's risk model.",
+      "Source": "OWASP MASVS-AUTH and MASVS-PLATFORM; Apple Inc., App Groups; Apple Inc., Keychain access groups; Apple Inc., XPC; Apple Inc., App code signing; NIST SP 800-53 IA-10.",
       "Priority": "Not described",
-      "Rationale": "Enhancing access control with alternative mechanisms and adaptive authentication improves the security of sensitive operations, minimizes dependency on user interaction, and mitigates risks posed by compromised authentication methods or suspicious activities.",
+      "Rationale": "On iOS, inter-application identity and access are enforced through code signing, entitlements, App Groups, Keychain access groups, authenticated XPC, constrained extensions, and validation of external entry points. Adaptive authentication is a separate conditional control driven by documented risk.",
       "Number of Children": "0",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -3206,8 +3211,8 @@
       "Importance": "90",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Signature-Level Access Control Testing:\nConfirm that signature-level protection is applied for IPC communication in place of user-permission prompts.\nAdditional Authentication Testing:\nValidate that sensitive operations within the application are protected by additional authentication mechanisms, such as biometrics or MFA.\nAdaptive Authentication Simulation:\nTest the implementation of adaptive authentication by simulating suspicious behavior, such as accessing unusual data or exceeding normal access thresholds.\nDynamic Authentication Behavior Validation:\nEnsure that adaptive authentication is triggered under defined conditions, such as suspicious network addresses or excessive data access.\nStatic Code Analysis:\nReview source code to verify that alternative access controls and adaptive authentication techniques are implemented securely.\nPenetration Testing:\nAttempt to bypass alternative access controls and adaptive authentication mechanisms to identify potential vulnerabilities.",
-      "controles": "The application must implement alternative access controls, such as signature-level protection for inter-process communication (IPC) and adaptive authentication techniques, to enhance security without over-reliance on user-confirmed permissions.",
+      "Validation criteria": "Interface inventory:\nIdentify App Groups, Keychain access groups, app extensions, XPC services, Universal Links, and custom URL schemes.\nAccess-control testing:\nVerify that entitlements and access groups are least privilege. Authenticate XPC peers where applicable and validate all externally supplied routes and parameters. Test access from unauthorized clients.\nAdaptive authentication applicability:\nReview the risk model and defined triggers. If adaptive authentication is required, test unusual locations, devices, access volumes, or other documented signals and verify an appropriate step-up challenge.\nExpected result:\nUnauthorized applications cannot use protected interfaces, and documented high-risk conditions trigger additional authentication without weakening mandatory MFA.",
+      "controles": "Externally reachable iOS interfaces must rely on platform-enforced identity and least-privilege access controls, and sensitive operations must require additional or adaptive authentication when defined by the application's risk model.",
       "Flags": [
         "has_secure_ios_ipc",
         "has_iaa_supports_mfa_for_sensitive_ephi_access",
@@ -3417,10 +3422,10 @@
     },
     {
       "PUID": "SECM-CAT-IAA-088",
-      "Requirement description": "The application must integrate with iOS and iPadOS's Credential Manager to provide unified access to authentication methods, including passkeys, passwords, and federated sign-in solutions, ensuring seamless and secure user authentication.",
-      "Source": "Apple Inc., Keychain data protection [157].",
+      "Requirement description": "Where passkeys, saved passwords, or federated sign-in are part of the documented authentication design, the application must integrate with Apple AuthenticationServices and associated platform capabilities to provide secure credential selection and authorization flows.",
+      "Source": "Apple Inc., AuthenticationServices; Apple Inc., Supporting passkeys; Apple Inc., Enabling Password AutoFill on a text input view; Apple Inc., Associated Domains; OWASP MASVS-AUTH.",
       "Priority": "Not described",
-      "Rationale": "Integrating with iOS and iPadOS's Credential Manager ensures consistent and secure handling of various authentication methods while streamlining user experience. This approach centralizes authentication processes, reduces security risks, and enhances compatibility with modern authentication standards.",
+      "Rationale": "AuthenticationServices provides the iOS and iPadOS interfaces for passkeys, authorization requests, credential-provider integration, and supported federated sign-in flows. Use of platform interfaces reduces credential exposure and provides a consistent authorization boundary, while server-side validation remains necessary.",
       "Number of Children": "0",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -3431,11 +3436,12 @@
       "Importance": "91",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Integration Test:\nVerify that the application correctly integrates with iOS and iPadOS's Credential Manager and supports authentication methods like passkeys, passwords, and federated sign-in solutions.\nUnified Interface Validation:\nConfirm that all authentication requests are processed through a unified access interface.\nValidate the functionality of the service-request handler module in routing requests securely and accurately.\nAuthentication Compatibility Test:\nEnsure compatibility with major authentication providers and methods supported by iOS and iPadOS Credential Manager.\nValidate that user credentials are securely stored and accessed via the Credential Manager.\nSecurity Review:\nPerform a security audit to verify that the Credential Manager integration adheres to iOS and iPadOS’s security standards.\nConfirm that sensitive data is not exposed during authentication processes.",
-      "controles": "The application must integrate with iOS and iPadOS's Credential Manager to provide unified access to authentication methods, including passkeys, passwords, and federated sign-in solutions, ensuring seamless and secure user authentication.",
+      "Validation criteria": "Applicability:\nReview the documented authentication architecture. If passkeys, saved-password AutoFill, credential-provider integration, or federated sign-in are not supported, record the corresponding capability as not applicable.\nAuthenticationServices review:\nInspect ASAuthorizationController, passkey credential requests, presentation anchors, callbacks, cancellation, error handling, and any credential-provider extension. Verify that authorization results are associated with the initiating user action and request.\nAssociated-domain review:\nFor passkeys and web credentials, verify the relying-party identifier, webcredentials association, application identifiers, and production associated-domain configuration.\nServer validation:\nVerify challenges, origin and relying-party binding, signatures, counters where applicable, state, nonce, issuer, audience, expiration, and replay protection for the selected authentication mechanism.\nData handling:\nConfirm that credentials and assertions are not logged, placed in URLs, retained unnecessarily, or disclosed to analytics and unrelated SDKs.\nExpected result:\nEvery implemented Apple credential flow is correctly bound to the app, user request, relying party, and backend validation context.",
+      "controles": "Where passkeys, saved passwords, or federated sign-in are part of the documented authentication design, the application must integrate with Apple AuthenticationServices and associated platform capabilities to provide secure credential selection and authorization flows.",
       "Flags": [
+        "has_authenticationservices_integration",
+        "has_passkey_authentication",
         "has_oauth2_authentication",
-        "has_jwt_tokens",
         "has_token_based_auth",
         "has_sso_mechanisms"
       ]
@@ -3938,10 +3944,10 @@
     },
     {
       "PUID": "SECM-CAT-IAA-110",
-      "Requirement description": "The application must ensure that the remote endpoint uses randomly generated access tokens to authenticate client requests, avoiding the transmission of user credentials.",
-      "Source": "4.2: Verify that the remote endpoint uses randomly generated access tokens to authenticate client requests without sending the user's credentials [19].\nApple Inc., Security framework [156].\nApple Inc., Keychain data protection [157].",
+      "Requirement description": "Remote services must authenticate client requests with unique, unpredictable, time-bounded, and revocable access tokens rather than repeatedly transmitting primary user credentials.",
+      "Source": "OWASP MASVS-AUTH; OAuth 2.0 Security Best Current Practice; Apple Inc., Keychain data protection.",
       "Priority": "Not described",
-      "Rationale": "Using randomly generated access tokens for client request authentication reduces the risk of exposing user credentials during communication, ensuring enhanced security and mitigating potential threats like credential interception or reuse attacks.",
+      "Rationale": "Short-lived access tokens limit repeated exposure of primary credentials and enable scoped authorization and revocation. Client-side token storage must use Keychain with accessibility and synchronization settings appropriate to the session and threat model.",
       "Number of Children": "0",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -3952,8 +3958,8 @@
       "Importance": "93",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Access Token Generation Test:\nVerify that the remote endpoint generates unique, random access tokens for each client session.\nCredential Transmission Test:\nConfirm that user credentials are not transmitted during client-server communication after initial authentication.\nToken Expiry and Revocation Test:\nEnsure that access tokens have defined expiration periods and can be revoked if necessary.\nSecure Token Storage Test:\nValidate that access tokens are securely stored on the client side using platform-recommended secure storage mechanisms (e.g., keychain or Keychain).",
-      "controles": "The application must ensure that the remote endpoint uses randomly generated access tokens to authenticate client requests, avoiding the transmission of user credentials.",
+      "Validation criteria": "Token issuance:\nVerify that the authorization server issues unpredictable tokens with defined audience, scope, lifetime, and client or session context. Confirm that primary credentials are not retransmitted after initial authentication.\nRequest authentication:\nInspect network traffic and client code to verify correct authorization headers, TLS use, and absence of tokens in URLs, logs, analytics, or error messages.\nExpiry and revocation:\nTest expiration, logout, account removal, credential change, refresh-token rotation, replay, and server-side revocation.\nClient storage:\nVerify that reusable tokens are stored in Keychain with the strongest accessibility and device-only attributes compatible with the use case. Ephemeral tokens must not be persisted unnecessarily.\nExpected result:\nEvery protected request uses an appropriately scoped valid token, and expired, revoked, replayed, or context-invalid tokens are rejected.",
+      "controles": "Remote services must authenticate client requests with unique, unpredictable, time-bounded, and revocable access tokens rather than repeatedly transmitting primary user credentials.",
       "Flags": [
         "has_endpoint_requires_user_authentication",
         "has_token_based_auth",
@@ -4651,10 +4657,10 @@
     },
     {
       "PUID": "SECM-CAT-IOV-016",
-      "Requirement description": "The mobile application must validate and sanitize all inputs from external sources and users, including data received through the UI, inter-process communication (IPC) mechanisms such as intents, custom URLs, and network sources, to prevent injection attacks and ensure input integrity.",
-      "Source": "6.2: Verify that all inputs from external sources and the user are validated and if necessary sanitized. This includes data received via the UI, IPC mechanisms such as intents, custom URLs, and network sources [19]. MASVS-CODE-4: The app validates and sanitizes all untrusted inputs: Apps have many data entry points including the UI, IPC, the network, the file system, etc. This incoming data might have been inadvertently modified by untrusted actors and may lead to bypass of critical security checks as well as classical injection attacks such as SQL injection, XSS or insecure deserialization. This control ensures that this data is treated as untrusted input and is properly verified and sanitized before it’s used [20]\nApple Inc., Security framework [156].\nApple Inc., Preventing Insecure Network Connections [158].\nApple Inc., App Groups Entitlement [162].",
+      "Requirement description": "The application must validate all untrusted input received through user interfaces, network responses, files, Universal Links, custom URL schemes, app extensions, App Groups, XPC, notifications, and other external iOS entry points before using it in security-sensitive operations.",
+      "Source": "OWASP MASVS-CODE and MASVS-PLATFORM; Apple Inc., Supporting Universal Links; Apple Inc., Defining a custom URL scheme; Apple Inc., App Groups; Apple Inc., XPC.",
       "Priority": "Not defined",
-      "Rationale": "Unvalidated inputs can be exploited by attackers to bypass security controls, leading to data leaks, injection attacks, or system compromise. Proper input sanitization ensures robust protection against these threats.",
+      "Rationale": "An iOS application receives untrusted data through multiple platform-specific entry points. Type, structure, range, origin, authorization context, and business constraints must be checked before data influences navigation, storage, commands, rendering, or security decisions.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -4665,8 +4671,8 @@
       "Importance": "87",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "UI Input Validation Test:\nTest: Submit invalid or potentially malicious input (e.g., SQL commands, script tags) through the application’s user interface.\nExpected Result: The application sanitizes or rejects the input, preventing it from executing unintended operations.\nIPC Mechanism Input Test:\nTest: Send malformed or malicious data via intents or custom URLs to test inter-process communication security.\nExpected Result: The application detects and safely handles the malformed data without compromising functionality or security.\nNetwork Data Input Validation Test:\nTest: Intercept network communications to inject untrusted data into the application.\nExpected Result: The application validates and sanitizes incoming data, maintaining integrity and logging any suspicious activity.\nFile System Input Validation Test:\nTest: Attempt to load or process files containing unexpected or malformed data.\nExpected Result: The application processes only valid, expected file formats and rejects unsafe inputs.\nInjection Attack Simulation:\nTest: Simulate injection attacks (e.g., SQL injection, XSS) through various input vectors.\nExpected Result: The application resists all injection attempts, logging any detected malicious activities.",
-      "controles": "The mobile application must validate and sanitize all inputs from external sources and users, including data received through the UI, inter-process communication (IPC) mechanisms such as intents, custom URLs, and network sources, to prevent injection attacks and ensure input integrity.",
+      "Validation criteria": "Entry-point inventory:\nIdentify UI fields, API responses, imported files, Universal Links, custom URL schemes, notification payloads, app extensions, App Groups, XPC messages, pasteboard input, and shared files.\nValidation testing:\nSubmit malformed types, invalid encodings, boundary values, oversized values, unexpected fields, unauthorized identifiers, repeated parameters, and injection payloads to each applicable entry point.\nSecurity-order review:\nVerify that decoding and canonicalization complete before authorization or security checks and that validation occurs before storage, rendering, routing, or command construction.\nExpected result:\nInvalid or unauthorized input is rejected safely without execution, privilege changes, data disclosure, corruption, or sensitive logging.",
+      "controles": "The application must validate all untrusted input received through user interfaces, network responses, files, Universal Links, custom URL schemes, app extensions, App Groups, XPC, notifications, and other external iOS entry points before using it in security-sensitive operations.",
       "Flags": [
         "has_backend_input_validation",
         "has_data_format_strictly_controlled"
@@ -4674,10 +4680,10 @@
     },
     {
       "PUID": "SECM-CAT-IOV-017",
-      "Requirement description": "The mobile application must perform rigorous input validation for all data retrieved from external storage, treating it as untrusted input to prevent unauthorized access, data corruption, or injection attacks.",
-      "Source": "Apple Inc., Security framework [156].",
+      "Requirement description": "The application must treat files and data obtained outside its private application container as untrusted and validate them before parsing, displaying, importing, or using them in security-sensitive operations.",
+      "Source": "OWASP MASVS-CODE and MASVS-STORAGE; Apple Inc., Accessing documents using FileProvider; Apple Inc., security-scoped URLs; Apple Inc., App Groups.",
       "Priority": "Not defined",
-      "Rationale": "External storage is prone to tampering and may expose the application to risks such as injection attacks, data corruption, or unauthorized access. Validating input ensures that only safe and expected data is processed.",
+      "Rationale": "On iOS, externally supplied data may arrive through document pickers, Files, iCloud, App Groups, extensions, downloads, shared containers, or security-scoped URLs. Each of these sources crosses a trust boundary.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -4688,8 +4694,8 @@
       "Importance": "86",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "External Storage Input Validation Test:\nTest: Access files from external storage with different formats, including corrupted and maliciously crafted files.\nExpected Result: The application detects and rejects invalid files while processing only files with safe and expected formats.\nInjection Simulation Test:\nTest: Inject malicious content into files on external storage (e.g., SQL commands, scripts) and attempt to access them through the application.\nExpected Result: The application identifies the malicious input, prevents execution, and logs the activity for further analysis.\nBoundary Value Test for Input Size:\nTest: Provide files with excessively large or zero-byte sizes to test how the application handles boundary conditions.\nExpected Result: The application processes only files within expected size limits and gracefully handles boundary conditions.\nError Handling Test:\nTest: Force the application to access malformed or encrypted files without proper decryption keys.\nExpected Result: The application displays appropriate error messages without crashing or leaking sensitive information.",
-      "controles": "The mobile application must perform rigorous input validation for all data retrieved from external storage, treating it as untrusted input to prevent unauthorized access, data corruption, or injection attacks.",
+      "Validation criteria": "Applicability:\nInventory document import, Files integration, downloads, iCloud containers, App Groups, extensions, and other shared-file sources. If the application accepts no such data, record the requirement as not applicable.\nFile validation:\nTest malformed, truncated, encrypted, oversized, empty, polyglot, and incorrectly typed files. Verify type using content and a strict parser rather than trusting only the extension or declared MIME type.\nAccess review:\nVerify correct handling and release of security-scoped resources and least-privilege access to shared containers.\nExpected result:\nOnly supported and valid data is processed; invalid input fails safely without injection, path traversal, resource exhaustion, disclosure, or corruption.",
+      "controles": "The application must treat files and data obtained outside its private application container as untrusted and validate them before parsing, displaying, importing, or using them in security-sensitive operations.",
       "Flags": [
         "ios_file_sharing_enabled",
         "has_backend_input_validation",
@@ -4769,10 +4775,10 @@
     },
     {
       "PUID": "SECM-CAT-IOV-021",
-      "Requirement description": "The application must disable keyboard caching for text inputs that handle sensitive data, such as credentials or personal information, to prevent unintended exposure or unauthorized access.",
-      "Source": "2.4: Verify that the keyboard cache is disabled on text inputs that process sensitive data [19]. Avoid that credentials (personal data) be visible in the cache or in the code [25].",
+      "Requirement description": "Text inputs that handle passwords, PINs, one-time codes, or other sensitive values must use iOS text-input protections appropriate to the data type and must not expose those values through keyboard learning, correction, suggestions, or inappropriate AutoFill behavior.",
+      "Source": "OWASP MASVS-STORAGE; Apple Inc., UITextInputTraits; Apple Inc., Password AutoFill; Apple Inc., UITextContentType.",
       "Priority": "Not defined",
-      "Rationale": "Disabling keyboard caching for sensitive input fields mitigates the risk of exposing user credentials or personal data in keyboard prediction caches or memory.",
+      "Rationale": "Sensitive input can be exposed through keyboard learning, suggestions, correction, or unsuitable AutoFill configuration. iOS controls differ by input type: password and one-time-code AutoFill may be desirable, while autocorrection, spell checking, and learning of secrets are not.",
       "Number of Children": "1",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -4783,13 +4789,10 @@
       "Importance": "81",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Keyboard Cache Disabling Test:\nTest: Inspect text input fields used for credentials or personal data to verify that keyboard caching is disabled.\nExpected result: Keyboard prediction and caching are disabled for all sensitive input fields.\nData Caching Validation Test:\nTest: Enter sensitive data into text fields and check if the data appears in keyboard prediction or autocomplete suggestions.\nExpected result: No sensitive data is retained or suggested by the keyboard.\nCode Inspection Test:\nTest: Review the application codebase to confirm that the autofill and autocomplete attributes are set to \"off\" for sensitive fields.\nExpected result: Sensitive input fields explicitly disable keyboard caching and autocomplete functionality.\nUser Data Persistence Test:\nTest: Restart the application and confirm that previously entered sensitive data is not accessible or displayed.\nExpected result: Sensitive data is not persisted in caches or visible upon app restart.\nPenetration Test:\nTest: Perform a security test to ensure no sensitive data leaks occur through keyboard caching mechanisms.\nExpected result: Sensitive data remains secure and is not retrievable through keyboard-related vulnerabilities.",
-      "controles": "The application must disable keyboard caching for text inputs that handle sensitive data, such as credentials or personal information, to prevent unintended exposure or unauthorized access.",
+      "Validation criteria": "Field inventory:\nIdentify password, PIN, one-time-code, recovery-code, private-key, health identifier, and other sensitive text inputs.\nConfiguration review:\nInspect secureTextEntry, textContentType, autocorrection, spell checking, smart punctuation, capitalization, and any custom keyboard handling. Confirm that each setting matches the data type and documented user experience.\nDynamic testing:\nEnter representative sensitive values and verify that they do not appear later as learned suggestions, corrections, previews, logs, or restored application state. Verify that Password AutoFill and one-time-code AutoFill, when used, occur only in their intended fields.\nExpected result:\nSensitive values are masked where appropriate, are not learned by the keyboard, and are offered through AutoFill only when explicitly suitable for the field.",
+      "controles": "Text inputs that handle passwords, PINs, one-time codes, or other sensitive values must use iOS text-input protections appropriate to the data type and must not expose those values through keyboard learning, correction, suggestions, or inappropriate AutoFill behavior.",
       "Flags": [
-        "has_ui_data_masking",
-        "has_screen_capture_protection",
-        "has_clears_ui_on_background",
-        "has_displays_sensitive_data_unmasked"
+        "has_secure_sensitive_text_input"
       ]
     },
     {
@@ -4985,10 +4988,10 @@
     },
     {
       "PUID": "SECM-CAT-ICO-004",
-      "Requirement description": "The application must prioritize secure and authenticated communication methods, such as Firebase Cloud Messaging (FCM) or encrypted IP-based networking protocols, instead of relying on SMS for app-server interactions.",
-      "Source": "Apple Inc., Security framework [156].\nApple Inc., Preventing Insecure Network Connections [158].",
+      "Requirement description": "Application-to-server communication must use authenticated, encrypted IP-based channels. Push notifications must use Apple Push Notification service (APNs), either directly or through a provider such as Firebase Cloud Messaging (FCM) configured for APNs, and push payloads must not contain unnecessary sensitive data. SMS must not be used as a general app-to-server transport channel.",
+      "Source": "Apple Inc., UserNotifications; Apple Inc., Communicating with APNs; Apple Inc., Setting up a remote notification server; Firebase, Receive messages in Apple platform apps; OWASP MASVS-NETWORK and MASVS-PRIVACY.",
       "Priority": "Not defined",
-      "Rationale": "SMS lacks robust encryption and authentication, making it vulnerable to interception and impersonation. Using secure, IP-based protocols ensures the confidentiality and authenticity of data transmitted between the app and server.",
+      "Rationale": "TLS-protected application APIs provide the primary bidirectional communication channel. On iOS and iPadOS, remote notifications are delivered through APNs; FCM may act as a provider layer while delivery to the device still uses APNs. Notification payloads traverse provider infrastructure and system surfaces, so they should carry only the minimum information needed to prompt an authenticated fetch.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -4999,11 +5002,14 @@
       "Importance": "97",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Communication Protocol Analysis Test:\nTest: Examine the communication framework used for app-server interactions.\nExpected result: Communication is established using secure, authenticated methods such as FCM or encrypted IP protocols, without reliance on SMS.\nAuthentication Mechanism Verification Test:\nTest: Validate the authentication methods applied in app-server communications.\nExpected result: Communications are authenticated, ensuring only legitimate devices and servers can exchange data.\nSMS Interception Test:\nTest: Attempt to intercept communications sent via SMS if any fallback is enabled.\nExpected result: No sensitive data is sent via SMS, even during fallback scenarios.\nEncryption Assessment Test:\nTest: Confirm that all data exchanged over the communication channel is encrypted end-to-end.\nExpected result: Data in transit is encrypted with robust protocols such as TLS 1.3.\nAlternative Channel Resilience Test:\nTest: Introduce simulated network vulnerabilities and evaluate the app’s ability to maintain secure communication without reverting to SMS.\nExpected result: The app continues to utilize secure alternatives without compromising communication security.",
-      "controles": "The application must prioritize secure and authenticated communication methods, such as Firebase Cloud Messaging (FCM) or encrypted IP-based networking protocols, instead of relying on SMS for app-server interactions.",
+      "Validation criteria": "Channel inventory:\nInventory application APIs, APNs registration, provider servers, FCM configuration, notification service extensions, deep links, and any SMS-related workflow. Document the purpose and data classification of each channel.\nAPI transport testing:\nVerify TLS, server authentication, request authentication, token handling, redirect behavior, and rejection of insecure fallback for application-to-server communication.\nAPNs and FCM review:\nVerify APNs environment separation, device-token handling, token refresh and invalidation, provider authentication keys or certificates, topic and bundle binding, and least-privilege access to provider credentials. If FCM is used, verify the Apple application configuration, APNs authentication upload, environment mapping, and provider access controls.\nPayload review:\nInspect representative notification payloads and service-extension processing. Confirm that PHI, credentials, tokens, prescription details, and other sensitive content are omitted or minimized and that sensitive data is fetched only after appropriate application authentication.\nSMS review:\nConfirm that SMS is not used as a general data transport. Evaluate SMS one-time codes separately under the dedicated authentication-code requirement.\nExpected result:\nApplication traffic uses authenticated TLS, push delivery uses correctly configured APNs directly or through FCM, and notification payloads do not unnecessarily expose sensitive data.",
+      "controles": "Application-to-server communication must use authenticated, encrypted IP-based channels. Push notifications must use Apple Push Notification service (APNs), either directly or through a provider such as Firebase Cloud Messaging (FCM) configured for APNs, and push payloads must not contain unnecessary sensitive data. SMS must not be used as a general app-to-server transport channel.",
       "Flags": [
-        "has_tls_ssl_pinning_implemented",
-        "has_ssl_cert_pinning_implemented"
+        "has_apns_integration",
+        "has_fcm_apns_integration",
+        "has_secure_notifications",
+        "has_notification_leaks_sensitive_data",
+        "has_token_based_auth"
       ]
     },
     {
@@ -5173,10 +5179,10 @@
     },
     {
       "PUID": "SECM-CAT-ICO-013",
-      "Requirement description": "The mobile application must validate all data downloaded over insecure protocols, such as HTTP. Input validation must be enforced on all responses, particularly when processing data in WKWebView components components or handling responses to HTTP intents, to ensure untrusted data does not compromise application security.",
-      "Source": "Apple Inc., Security framework [156].\nApple Inc., WKWebView [165].",
+      "Requirement description": "The application must use TLS for network communication unless a narrowly scoped and documented exception is explicitly required. All network responses and downloaded content must be treated as untrusted and validated before parsing, rendering, storing, or using them in security-sensitive operations.",
+      "Source": "OWASP MASVS-NETWORK and MASVS-CODE; Apple Inc., App Transport Security; Apple Inc., Preventing insecure network connections; Apple Inc., WKWebView.",
       "Priority": "Not defined",
-      "Rationale": "Validating downloaded data from insecure sources ensures that malicious or manipulated data cannot compromise the integrity, functionality, or security of the application. This is critical for protecting sensitive information and preventing unauthorized access or code execution.",
+      "Rationale": "Transport security protects data in transit, while strict response validation protects the application from malicious or compromised endpoints. Input validation does not make cleartext HTTP safe and therefore cannot replace TLS.",
       "Number of Children": "0",
       "Number of Parents": "2",
       "Cycles": "1",
@@ -5187,8 +5193,8 @@
       "Importance": "98",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "HTTP Response Validation Test:\nTest: Simulate data downloads over HTTP and verify that the application performs input validation on the received data.\nExpected result: Data is validated, and any unexpected or malformed data is rejected or sanitized.\nWKWebView components Data Handling Test:\nTest: Load untrusted or malformed data into WKWebView components and observe application behavior.\nExpected result: The WKWebView components component rejects or properly escapes unsafe content without executing scripts or rendering malicious elements.\nInjection Attack Simulation Test:\nTest: Inject malicious data into HTTP responses and validate that the application detects and blocks the attack.\nExpected result: The application identifies and neutralizes injection attempts, ensuring no compromise of security.\nSecure Protocol Usage Test:\nTest: Attempt to force the application to process data downloaded over insecure protocols without validation.\nExpected result: The application enforces validation or prevents processing untrusted data.\nError Handling Test:\nTest: Validate the application's response when receiving corrupted or unexpected data over HTTP.\nExpected result: The application gracefully handles errors, rejecting malicious data while maintaining functionality.\nPenetration Testing:\nTest: Conduct penetration testing focused on manipulating data downloaded over HTTP to identify vulnerabilities.\nExpected result: No vulnerabilities are exploitable through manipulated or unvalidated data responses.",
-      "controles": "The mobile application must validate all data downloaded over insecure protocols, such as HTTP. Input validation must be enforced on all responses, particularly when processing data in WKWebView components components or handling responses to HTTP intents, to ensure untrusted data does not compromise application security.",
+      "Validation criteria": "Transport review:\nInspect URLSession, Network framework, WKWebView loading, App Transport Security settings, redirects, and third-party SDK traffic. Verify TLS and document every exception by domain, purpose, and risk.\nResponse validation:\nFor each response type, verify status, size, encoding, media type, schema, field ranges, identifiers, authorization context, and cryptographic authenticity where required.\nAdversarial testing:\nIntercept traffic and test malformed responses, MIME confusion, oversized payloads, invalid encodings, redirects, replayed data, and content containing injection payloads.\nExpected result:\nNo undocumented cleartext communication occurs and invalid network content is rejected before it can affect application state or sensitive operations.",
+      "controles": "The application must use TLS for network communication unless a narrowly scoped and documented exception is explicitly required. All network responses and downloaded content must be treated as untrusted and validated before parsing, rendering, storing, or using them in security-sensitive operations.",
       "Flags": [
         "has_tls_ssl_pinning_implemented",
         "has_ssl_cert_pinning_implemented"
@@ -5759,10 +5765,10 @@
     },
     {
       "PUID": "SECM-CAT-IPC-006",
-      "Requirement description": "The mobile application must clear or overwrite memory blocks used to process sensitive data, such as Personally Identifiable Information (PII), location data, or authentication credentials. Additionally, sensitive personal data must not be retained beyond its required use, and temporary storage must adhere to strict access controls.",
-      "Source": "SRG-APP-000516-MAPP-000067: The mobile app must clear or overwrite memory blocks used to process potentially sensitive data. Sensitive data may include PII, a user's location, or authentication credentials [17]. 1.7.Do not store historical location data or other sensitive information on the device beyond the period required by the application. Assume that shared storage is untrusted - information may easily leak in unexpected ways through any shared storage. In particular:\nBe aware of caches and temporary storage as a possible leakage channel, when shared with other apps. Be aware of shared storage such as address book, media gallery, audio files, as a possible leakage channel. For example, storing images with location metadata in the media-gallery allows that information to be shared in unintended ways. Do not store temporary cached data in a world readable directory [16]\n1.8.For sensitive personal data, deletion should be scheduled according to a maximum retention period, (to prevent e.g. data remaining in caches indefinitely). [16]",
+      "Requirement description": "Sensitive values processed in memory or temporary storage must be retained only for the minimum necessary time. The application must minimize copies, clear app-owned mutable buffers when technically effective, and prevent temporary data from being exposed through caches, shared containers, exports, logs, backups, or other system surfaces.",
+      "Source": "OWASP MASVS-STORAGE and MASVS-PRIVACY; Apple Inc., App Sandbox; Apple Inc., Data Protection; Apple Inc., Keychain data protection; Apple Inc., Protecting the user's privacy.",
       "Priority": "Not defined",
-      "Rationale": "Proper management and timely deletion of sensitive data mitigate risks of unintended exposure through shared or temporary storage. Clearing memory and enforcing retention limits enhance user privacy and align with security best practices.",
+      "Rationale": "Sensitive data may persist in Swift values, mutable buffers, caches, temporary files, logs, previews, shared containers, or exported content. iOS sandboxing limits access by unrelated applications, but exposure must also be reduced through data minimization, appropriate Data Protection, short retention, controlled sharing, and reliable cleanup at lifecycle events the application can observe.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "0",
@@ -5773,11 +5779,10 @@
       "Importance": "94",
       "Current state": "Not described",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Memory Clearing Test:\nTest: Simulate operations involving sensitive data (e.g., authentication, PII processing) and verify that memory blocks used during these operations are cleared immediately after use.\nExpected result: Memory is cleared or overwritten, ensuring no sensitive data remains accessible post-operation.\nRetention Policy Compliance Test:\nTest: Verify that sensitive data stored on the device adheres to a defined retention period and is deleted automatically when no longer required.\nExpected result: Sensitive data is deleted in accordance with the configured retention policy.\nTemporary Storage Test:\nTest: Confirm that sensitive data is not stored in temporary locations or world-readable directories (e.g., shared storage, caches).\nExpected result: Sensitive data is only stored in secure, private storage locations.\nCache Management Test:\nTest: Inspect the app’s caching mechanism to ensure that cached sensitive data is cleared at appropriate intervals.\nExpected result: No sensitive data remains in the cache beyond the designated period.\nShared Storage Test:\nTest: Attempt to access sensitive data from shared storage directories (e.g., media gallery, address book) by unauthorized applications.\nExpected result: Sensitive data is not accessible through shared storage.",
-      "controles": "The mobile application must clear or overwrite memory blocks used to process sensitive data, such as Personally Identifiable Information (PII), location data, or authentication credentials. Additionally, sensitive personal data must not be retained beyond its required use, and temporary storage must adhere to strict access controls.",
+      "Validation criteria": "Data-flow inventory:\nIdentify credentials, tokens, personal identifiers, health data, location data, cryptographic material, and sensitive metadata processed in memory or written temporarily.\nMemory review:\nMinimize scope, lifetime, immutable String conversion, and copies. Where the application owns a mutable sensitive buffer, use an optimization-resistant zeroization mechanism when technically effective. Do not assume ARC release guarantees immediate physical erasure.\nTemporary-storage review:\nInspect caches, temporary directories, previews, logs, crash data, App Groups, exported files, pasteboard, and backup behavior. Verify appropriate Data Protection and least-privilege access.\nLifecycle testing:\nExercise completion, cancellation, expiration, logout, account switching, backgrounding, termination, and relaunch. Verify cleanup at events the app can observe and safe recovery when termination prevents cleanup code from running.\nRetention review:\nConfirm that each retained item has a documented purpose and lifetime and is removed or rendered inaccessible when no longer required.\nExpected result:\nSensitive values are not retained or exposed beyond their documented operational need.",
+      "controles": "Sensitive values processed in memory or temporary storage must be retained only for the minimum necessary time. The application must minimize copies, clear app-owned mutable buffers when technically effective, and prevent temporary data from being exposed through caches, shared containers, exports, logs, backups, or other system surfaces.",
       "Flags": [
-        "has_sensitive_data_encrypted_with_os_keystore",
-        "has_sensitive_userdefaults_or_local_preferences_protected",
+        "has_sensitive_memory_cleanup",
         "has_uses_encrypted_local_database",
         "has_uses_encrypted_filesystem_storage",
         "has_encrypted_local_caching_of_ephi",
@@ -7238,10 +7243,10 @@
     },
     {
       "PUID": "SECM-CAT-IBP-025",
-      "Requirement description": "The mobile health application must ensure that dynamically executed code is loaded exclusively from secure, verified sources. Code from insecure sources, such as unencrypted network transmissions or locations outside an appropriately protected application container, must not be loaded to mitigate risks of unauthorized access or malicious code execution.",
-      "Source": "Apple Inc., Security framework [156].\nApple Inc., Preventing Insecure Network Connections [158].\nApple Inc., App code signing process in iOS, iPadOS, tvOS, visionOS and watchOS [167].",
+      "Requirement description": "The application must not download, install, or execute new native code outside its signed application bundle. Interpreted content must not alter application behavior beyond narrowly defined, reviewed functionality and must be obtained and processed through trusted channels.",
+      "Source": "Apple App Review Guidelines; Apple Platform Security; Apple Inc., Code signing; OWASP MASVS-RESILIENCE.",
       "Priority": "Not described",
-      "Rationale": "Loading code from insecure sources exposes mobile health applications to risks like unauthorized modifications, malicious injections, and potential exploitation. For healthcare applications, such vulnerabilities can compromise sensitive health data and breach user trust, making it essential to restrict dynamically loaded code to verified and secure origins.",
+      "Rationale": "iOS code signing and App Store policy require executable native code to be part of the signed bundle. Runtime-downloaded scripts or interpreted content can also create an unreviewed behavior channel and therefore require strict functional and data boundaries.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -7252,9 +7257,10 @@
       "Importance": "85",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Secure Code Source Verification\nTest: Analyze the application’s codebase to identify the origins of dynamically loaded code and ensure they are secure and validated.\nExpected result: All dynamically loaded code is sourced from encrypted, authenticated, and verified locations.\nWorld-Writable Location Access Check\nTest: Inspect the application to ensure it does not attempt to load executable code from world-writable locations (e.g., external storage).\nExpected result: No executable code is sourced from world-writable or insecure locations.\nNetwork Transmission Security\nTest: Validate that any code loaded from a network location is transmitted over secure channels such as HTTPS and authenticated before execution.\nExpected result: All dynamically loaded code transmitted over a network uses encrypted, secure communication protocols like HTTPS.\nPenetration Testing for Insecure Loading\nTest: Perform penetration testing to simulate attempts to inject malicious code into the application from insecure sources.\nExpected result: The application does not execute code from untrusted or malicious sources.\nCode Signature Validation\nTest: Verify that dynamically loaded code components are signed and the signatures are validated before execution.\nExpected result: Only signed and validated code is executed within the application.",
-      "controles": "The mobile health application must ensure that dynamically executed code is loaded exclusively from secure, verified sources. Code from insecure sources, such as unencrypted network transmissions or locations outside an appropriately protected application container, must not be loaded to mitigate risks of unauthorized access or malicious code execution.",
+      "Validation criteria": "Native-code review:\nInspect the source and binary for dlopen, dlsym, writable executable memory, downloaded frameworks, secondary executables, JIT behavior, and attempts to load executable content outside the signed bundle.\nInterpreted-content review:\nIdentify JavaScriptCore, WKWebView scripts, rule engines, templates, and other remotely supplied interpreted content. Verify that they cannot introduce or change general application functionality or access sensitive native interfaces.\nTransport and authenticity:\nWhere non-executable rules or content are downloaded, verify TLS, authenticated origin, schema validation, size limits, rollback protection where necessary, and secure failure.\nExpected result:\nNo new native executable code is downloaded or loaded, and interpreted content remains within a narrow documented capability.",
+      "controles": "The application must not download, install, or execute new native code outside its signed application bundle. Interpreted content must not alter application behavior beyond narrowly defined, reviewed functionality and must be obtained and processed through trusted channels.",
       "Flags": [
+        "has_no_external_code_loading",
         "ios_dynamic_code_loading"
       ]
     },
@@ -7864,10 +7870,10 @@
     },
     {
       "PUID": "SECM-CAT-SMC-018",
-      "Requirement description": "The mobile health application must minimize the use of dangerous-level permissions and avoid insecure file permissions, ensuring requests are clear and necessary to prevent user confusion or deterred installation.",
-      "Source": "Insecure permissions: 1. Avoid storing application files with overly permissive permissions like world-readable and/or world-writable [3]. Handling Dangerous Permissions: If a new permission is declared with a \"dangerous\" protection level, the following considerations must be addressed:\nThe permission string must be concise and clearly convey the security decision to users. The permission string must be localized into multiple languages to ensure broad understanding. The application must handle the possibility that users may choose not to install the app due to confusion or perceived risk associated with the dangerous permission.\nApple Inc., Security framework [156].\nApple Inc., App Groups Entitlement [162].\nApple Inc., Protecting the user's privacy [168].",
+      "Requirement description": "The application must request only the iOS privacy permissions necessary for documented functionality, provide accurate and localized purpose strings, handle denial or restriction safely, and avoid exposing files outside the intended application container or access group.",
+      "Source": "Apple Inc., Protecting the user's privacy; Apple Inc., Information Property List; Apple Inc., Entitlements; Apple Inc., App Groups.",
       "Priority": "Not described",
-      "Rationale": "Ensuring the clarity and necessity of permission requests reduces user confusion, builds trust, and maintains compliance with security standards critical in handling sensitive health data. Avoiding overly permissive file permissions minimizes unauthorized access risks.",
+      "Rationale": "iOS privacy access is controlled by protected-resource APIs, purpose strings, entitlements, sandbox containers, and access groups. Excessive permissions or broad file exposure increase privacy and security risk.",
       "Number of Children": "1",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -7878,13 +7884,13 @@
       "Importance": "88",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Permission Request Evaluation Test:\nTest: Verify that all permissions requested by the application are essential for its operation and are communicated clearly to users.\nExpected Result: The app requests only necessary permissions with concise, localized descriptions of their purpose.\nFile Permission Review Test:\nTest: Inspect application file permissions for any overly permissive settings such as accessible outside the intended application container or access group.\nExpected Result: Application files do not have overly permissive permissions.\nDangerous Permission Management Test:\nTest: Assess the app's ability to handle denied dangerous-level permissions gracefully, ensuring app functionality is not critically disrupted.\nExpected Result: The application operates securely and informs users when dangerous permissions are denied.\nUser Trust Feedback Test:\nTest: Conduct user acceptance testing to measure user trust and clarity of permission requests.\nExpected Result: Users report understanding and trust in the permissions being requested by the app.\nLocalized Permission Test:\nTest: Verify that dangerous-level permissions are properly localized in multiple languages.\nExpected Result: Permission descriptions are accurately localized, ensuring broad comprehension across supported languages.",
-      "controles": "The mobile health application must minimize the use of dangerous-level permissions and avoid insecure file permissions, ensuring requests are clear and necessary to prevent user confusion or deterred installation.",
+      "Validation criteria": "Permission inventory:\nCompare protected-resource API usage with Info.plist purpose strings, privacy manifests, entitlements, and documented features. Verify that unused permissions and entitlements are absent.\nPurpose-string review:\nConfirm that each purpose string accurately explains the concrete use, is localized for supported languages, and does not describe unrelated collection.\nDenial testing:\nDeny, restrict, and later revoke each permission. Verify secure degradation, clear user feedback, and absence of unauthorized fallback collection.\nFile-access review:\nInspect UIFileSharingEnabled, LSSupportsOpeningDocumentsInPlace, App Groups, exported documents, and access groups. Confirm that sensitive files are not exposed beyond intended clients.\nExpected result:\nOnly necessary access is declared and requested, denial is handled safely, and files remain within least-privilege boundaries.",
+      "controles": "The application must request only the iOS privacy permissions necessary for documented functionality, provide accurate and localized purpose strings, handle denial or restriction safely, and avoid exposing files outside the intended application container or access group.",
       "Flags": [
         "ios_sensitive_permissions_present",
-        "ios_file_sharing_enabled",
         "has_requests_only_minimum_permissions",
-        "has_supports_runtime_permission_management"
+        "has_minimal_entitlements",
+        "ios_file_sharing_enabled"
       ]
     },
     {
@@ -7980,10 +7986,10 @@
     },
     {
       "PUID": "SECM-CAT-SMC-023",
-      "Requirement description": "The mobile health application must activate free security features offered by the toolchain, including byte-code minification, stack protection, Position Independent Executable (PIE) support, and automatic reference counting.",
-      "Source": "7.8: Free security features offered by the toolchain, such as byte-code minification, stack protection, PIE support and automatic reference counting, are activated [19].",
+      "Requirement description": "Release builds must retain applicable security protections provided by the Apple toolchain and platform, including code signing, PIE/ASLR, non-executable memory, stack protection for native code, ARC for Objective-C and Swift interoperability, compiler optimization, and removal of unnecessary debug information and symbols.",
+      "Source": "OWASP MASVS-RESILIENCE; Apple Inc., Xcode build settings; Apple Inc., Code signing; Apple Platform Security.",
       "Priority": "Not described",
-      "Rationale": "Activating these free security features enhances the application's resilience against exploitation by minimizing vulnerabilities at the compilation and runtime levels.",
+      "Rationale": "Native iOS and iPadOS applications rely on signed Mach-O binaries, platform memory protections, compiler hardening, release optimization, and control of debug artifacts and symbols. Release builds must preserve the protections supplied by Xcode and the Apple operating system.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -7994,12 +8000,16 @@
       "Importance": "86",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Toolchain Configuration Test:\nTest: Verify that the app's build configuration enables security features such as byte-code minification, stack protection, PIE support, and automatic reference counting.\nExpected Result: All security features provided by the toolchain are enabled in the build settings.\nRuntime Protection Test:\nTest: Analyze the application during runtime to confirm that stack protection and PIE mechanisms are active.\nExpected Result: The app resists stack-based attacks and operates with address randomization.\nCode Minification Test:\nTest: Inspect the compiled bytecode or binary to confirm the application has undergone minification.\nExpected Result: Non-essential symbols and unnecessary code are removed or obfuscated.\nMemory Management Test:\nTest: Assess memory handling through tools to ensure proper automatic reference counting is implemented.\nExpected Result: No memory leaks or improper reference handling is detected.\nStatic Analysis Test:\nTest: Perform a static analysis on the compiled application to verify adherence to security features offered by the toolchain.\nExpected Result: The analysis confirms the app's compliance with toolchain security standards.",
-      "controles": "The mobile health application must activate free security features offered by the toolchain, including byte-code minification, stack protection, Position Independent Executable (PIE) support, and automatic reference counting.",
+      "Validation criteria": "Build-configuration review:\nInspect the Release configuration and archive settings. Verify production signing, release optimization, dead-code stripping where appropriate, disabled testability, and absence of development-only entitlements.\nBinary inspection:\nInspect the application and embedded native frameworks for valid signatures, PIE/ASLR compatibility, non-executable memory, stack canaries where applicable, encryption state of the distributed App Store binary, and unexpected debug symbols.\nLanguage and memory review:\nConfirm ARC for applicable Objective-C targets and identify unsafe native code requiring additional compiler hardening.\nExpected result:\nThe release archive preserves all applicable Apple platform protections and does not ship unnecessary development or debug material.",
+      "controles": "Release builds must retain applicable security protections provided by the Apple toolchain and platform, including code signing, PIE/ASLR, non-executable memory, stack protection for native code, ARC for Objective-C and Swift interoperability, compiler optimization, and removal of unnecessary debug information and symbols.",
       "Flags": [
-        "has_prevention_against_reverse_engineering",
-        "has_controls_protecting_temporary_compiled_data",
-        "has_temporary_compiled_data_securely_deleted"
+        "has_aslr",
+        "has_nx",
+        "has_stack_canary",
+        "has_valid_ios_signature",
+        "has_production_code_signing",
+        "has_no_development_entitlements",
+        "has_memory_safe_language_usage"
       ]
     },
     {
@@ -9459,10 +9469,10 @@
     },
     {
       "PUID": "SECM-CAT-IDS-048",
-      "Requirement description": "The mobile health application must ensure that during the uninstallation process, all confidential user data, including health information and app-specific credentials, is securely deleted from the device, storage media, and execution environment.",
-      "Source": "1.11.Ensure that during application removal (uninstall operation), any confidential user data and the corresponding app-specific credentials are deleted from the execution environment, the device, and any other storage medium [16]. Delete all stored health information before discarding or reusing the mobile device [32].",
+      "Requirement description": "The application must define and implement deletion behavior for locally held sensitive data when the user logs out, removes an account, requests data deletion, or uninstalls the application. Data outside the app container, including Keychain items, App Groups, cloud data, and server records, must follow the documented lifecycle.",
+      "Source": "Apple Platform Security; Apple Inc., App Sandbox; Apple Inc., Keychain data protection; Apple App Store Review Guidelines; OWASP MASVS-STORAGE and MASVS-PRIVACY.",
       "Priority": "Not described",
-      "Rationale": "Secure removal of user data during app uninstallation mitigates risks of data leakage, unauthorized access, and potential privacy violations.",
+      "Rationale": "iOS removes the application container during uninstallation but does not run application cleanup code at that moment, and some data such as Keychain items, shared-container data, cloud data, backups, or server records may persist. Deletion must therefore be designed around lifecycle events the app and backend can observe.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -9473,12 +9483,12 @@
       "Importance": "79",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Comprehensive Data Removal:\nTest: Verify that the app deletes all user data and credentials stored locally and in associated app directories upon uninstallation.\nExpected result: No residual data, including health information or credentials, remains on the device or in app-specific storage.\nRemote Data Deletion:\nTest: If applicable, ensure the app removes user data from connected cloud services or external storage upon user confirmation.\nExpected result: User data stored remotely is deleted as per the app’s data removal policy.\nSecure Deletion Methods:\nTest: Confirm that the app employs secure deletion mechanisms (e.g., overwriting or encryption) for sensitive data during uninstallation.\nExpected result: Data deleted using secure methods cannot be recovered.\nUser Notification:\nTest: Verify that the app informs the user about the data deletion process during uninstallation.\nExpected result: Users are clearly notified that all data, including health records, will be removed.\nData Cleanup Verification:\nTest: Perform forensic analysis after uninstallation to confirm the absence of residual sensitive data.\nExpected result: Forensic tools find no trace of deleted user data.",
-      "controles": "The mobile health application must ensure that during the uninstallation process, all confidential user data, including health information and app-specific credentials, is securely deleted from the device, storage media, and execution environment.",
+      "Validation criteria": "Data-location inventory:\nInventory sensitive data in the app container, Keychain, App Groups, extensions, caches, temporary files, backups, iCloud, and backend systems. Document expected behavior for logout, account removal, deletion request, and uninstall.\nObservable lifecycle testing:\nTest logout and account removal. Verify deletion or justified retention of local data, Keychain items, shared-container data, authentication state, and cached content.\nUninstall testing:\nUninstall and reinstall the application, then verify whether Keychain, App Group, cloud-restored, backup-restored, and server-held data behave according to the documented policy. Do not require the app to execute code during uninstall.\nBackend deletion:\nWhere user deletion is supported, verify authenticated request handling, session invalidation, completion status, retention exceptions, and propagation to applicable processors.\nExpected result:\nSensitive data is deleted or retained exactly as documented at every controllable lifecycle boundary, with no unexpected recovery after reinstall.",
+      "controles": "The application must define and implement deletion behavior for locally held sensitive data when the user logs out, removes an account, requests data deletion, or uninstalls the application. Data outside the app container, including Keychain items, App Groups, cloud data, and server records, must follow the documented lifecycle.",
       "Flags": [
-        "has_clears_local_data_on_uninstall",
-        "ios_file_sharing_enabled",
-        "has_uses_encrypted_filesystem_storage"
+        "has_data_deletion_mechanism",
+        "has_clears_auth_data_on_logout",
+        "has_clears_local_session_data_on_logout"
       ]
     },
     {
@@ -9532,10 +9542,10 @@
     },
     {
       "PUID": "SECM-CAT-IDS-051",
-      "Requirement description": "The mobile health application must prevent the use of insecure cached data in HTTP connections and embedded web browsing components, such as WKWebView components, by ensuring cache storage is secure and not tampered with.",
-      "Source": "12.14.Do not use insecure cached data in HTTP connections and in embedded web browsing capabilities (e.g., WebViews). Caches are usually located on the device file system.\nApple Inc., Security framework [156].\nApple Inc., Entitlements [159].\nApple Inc., WKWebView [165].",
+      "Requirement description": "HTTP clients and WKWebView components must avoid caching sensitive responses unless caching is explicitly required. Any retained cache must remain inside an appropriately protected container, follow server cache directives where applicable, and be cleared when its retention is no longer necessary.",
+      "Source": "OWASP MASVS-STORAGE and MASVS-NETWORK; Apple Inc., URLCache; Apple Inc., WKWebsiteDataStore; Apple Inc., Data Protection.",
       "Priority": "Not described",
-      "Rationale": "Storing HTTP or WKWebView components cache data in insecure locations can lead to data tampering and unauthorized access, compromising sensitive health information and application integrity.",
+      "Rationale": "Sensitive network and web content may persist in URLCache, WKWebsiteDataStore, cookies, temporary files, snapshots, or custom caches. iOS sandboxing limits cross-app access but does not replace minimization, appropriate protection, and lifecycle controls.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -9546,8 +9556,8 @@
       "Importance": "78",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Secure Cache Storage:\nTest: Verify that cached data is stored in a secure location, such as application-specific directories with restricted permissions.\nExpected result: All cached data is stored securely and cannot be accessed or modified by unauthorized users or applications.\nTamper Protection:\nTest: Ensure cached data is protected from tampering through measures such as cryptographic validation or access restrictions.\nExpected result: Any attempt to modify cached data results in detection or prevention mechanisms being triggered.\nCache Control Policies:\nTest: Validate that HTTP headers and WKWebView components configurations enforce cache control policies (e.g., no-store, no-cache, must-revalidate).\nExpected result: Cache control policies align with application security requirements, preventing sensitive data from being cached unnecessarily.\nAudit of Cache Usage:\nTest: Confirm the application logs or monitors attempts to access cached data in an unauthorized manner.\nExpected result: Logs provide visibility into access attempts and demonstrate compliance with secure cache handling practices.\nInsecure Location Avoidance:\nTest: Check that cache data is not stored in insecure locations such as shared external storage (e.g., SD card on iOS and iPadOS).\nExpected result: Cache data is restricted to secure, application-controlled storage areas.",
-      "controles": "The mobile health application must prevent the use of insecure cached data in HTTP connections and embedded web browsing components, such as WKWebView components, by ensuring cache storage is secure and not tampered with.",
+      "Validation criteria": "Cache inventory:\nIdentify URLSession URLCache use, cache policies, WKWebsiteDataStore configuration, cookies, web storage, downloaded files, previews, and custom caches.\nSensitive-response testing:\nExercise sensitive flows and inspect caches afterward. Verify appropriate request and response cache policy, including server Cache-Control directives where the application controls the service.\nProtection and lifecycle:\nVerify that retained cache uses appropriate Data Protection, is excluded from sharing and backup where required, and is cleared on logout, account removal, expiry, or completion of the sensitive flow.\nTampering testing:\nModify app-controlled cached data and verify that untrusted cache content cannot bypass validation, authorization, or integrity checks.\nExpected result:\nSensitive content is not unnecessarily cached and any justified cache is protected, bounded, and removed according to policy.",
+      "controles": "HTTP clients and WKWebView components must avoid caching sensitive responses unless caching is explicitly required. Any retained cache must remain inside an appropriately protected container, follow server cache directives where applicable, and be cleared when its retention is no longer necessary.",
       "Flags": [
         "has_local_caching_of_ephi",
         "has_encrypted_local_caching_of_ephi",
@@ -9791,10 +9801,10 @@
     },
     {
       "PUID": "SECM-CAT-IDS-062",
-      "Requirement description": "The mobile health application must ensure protection Against Tampered Executables.",
-      "Source": "Apple Inc., Security framework [156].\nApple Inc., App code signing process in iOS, iPadOS, tvOS, visionOS and watchOS [167].",
+      "Requirement description": "The application must rely on iOS code signing for executable integrity and, where the risk model requires additional assurance, use App Attest or equivalent server-validated signals to detect interactions from modified or unauthorized application instances.",
+      "Source": "Apple Platform Security; Apple Inc., Code signing; Apple Inc., Establishing your app's integrity with App Attest; OWASP MASVS-RESILIENCE.",
       "Priority": "Not described",
-      "Rationale": "The mobile health application must ensure protection against tampered app binaries and dynamically loaded executables. Interactions from modified binaries must be identified and handled securely to maintain the integrity of app functionality and data. Executable files retrieved from external storage must be signed and cryptographically verified prior to dynamic loading.",
+      "Rationale": "iOS verifies executable pages and signed bundle resources. Applications must not load executable code outside the signed bundle. For high-risk server operations, App Attest can provide additional evidence about the application instance, but integrity signals must be validated by the backend and must not replace authorization.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -9805,20 +9815,21 @@
       "Importance": "73",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Tampered Binary Detection:\nTest: Execute the app with a modified or tampered binary.\nExpected result: The app detects the tampered binary and terminates or restricts operations securely.\nCryptographic Signature Validation:\nTest: Attempt to load executable files from external storage with invalid or missing cryptographic signatures.\nExpected result: The system rejects unsigned or invalid executables and prevents their execution.\nAudit Logging:\nTest: Verify audit logs for tampered or invalid executable file loading attempts.\nExpected result: Logs capture details of the tampered or invalid attempts, including timestamps and file metadata.\nCode Review for Verification Logic:\nTest: Review the codebase for proper implementation of cryptographic signature verification mechanisms.\nExpected result: All dynamically loaded executables undergo signature checks using secure cryptographic methods.\nDynamic Testing Under Adversarial Conditions:\nTest: Simulate various tampering scenarios and evaluate the app's response.\nExpected result: The app consistently identifies tampered interactions and enforces protective measures without data leakage.",
-      "controles": "The mobile health application must ensure protection Against Tampered Executables.",
+      "Validation criteria": "Bundle integrity:\nInspect the production IPA and embedded frameworks for valid signatures, unexpected executables, altered resources covered by signing, development entitlements, and prohibited dynamic-code loading.\nTampering testing:\nModify the bundle or executable and verify that iOS refuses installation or execution. Test repackaged or unauthorized clients against sensitive backend operations.\nAttestation applicability:\nIf the documented risk model requires app-instance integrity, inspect App Attest challenge generation, key registration, assertion validation, replay prevention, environment separation, failure behavior, and server-side risk decisions.\nExpected result:\nModified signed code cannot execute as the legitimate app, and sensitive server operations use appropriately validated integrity evidence where required.",
+      "controles": "The application must rely on iOS code signing for executable integrity and, where the risk model requires additional assurance, use App Attest or equivalent server-validated signals to detect interactions from modified or unauthorized application instances.",
       "Flags": [
-        "has_protection_against_tampered_executables",
-        "ios_get_task_allow",
-        "has_prevention_against_reverse_engineering"
+        "has_valid_ios_signature",
+        "has_no_external_code_loading",
+        "has_app_attest",
+        "has_server_side_risk_validation"
       ]
     },
     {
       "PUID": "SECM-CAT-IDS-063",
-      "Requirement description": "Sensitive data must never be stored in publicly accessible locations, as external storage is globally readable, writable, and modifiable by other applications.",
-      "Source": "MASVS-STORAGE-2: The app prevents leakage of sensitive data: Prevent the unintentional storage or exposure of sensitive data in publicly accessible locations. This control addresses potential leaks that can be avoided through proactive measures by the developer [20]. 1.1.Classify data storage according to sensitivity and apply controls accordingly (e.g. passwords, personal data, location, error logs, etc.). Process, store and use data according to its classification [16].\nApple Inc., Keychain data protection [157].\nApple Inc., Entitlements [159].",
+      "Requirement description": "Sensitive data must not be stored in locations accessible to unrelated applications or users. Data exported from the application sandbox, placed in shared containers, synchronized with cloud services, or exposed through document-sharing mechanisms must be minimized and protected according to its sensitivity.",
+      "Source": "OWASP MASVS-STORAGE; Apple Inc., App Sandbox; Apple Inc., Data Protection; Apple Inc., App Groups; Apple Inc., Keychain data protection.",
       "Priority": "Not described",
-      "Rationale": "By limiting sensitive data storage to private locations, the application protects against unauthorized access, tampering, and exposure, ensuring the security and privacy of user information.",
+      "Rationale": "On iOS, exposure risk arises when data leaves the private app container through file sharing, shared containers, exports, cloud synchronization, backups, extensions, or overly broad access groups.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -9829,8 +9840,8 @@
       "Importance": "73",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Data Classification and Control:\nTest: Review the classification and storage logic implemented in the application.\nExpected result: Sensitive data is classified appropriately and stored only in secure, private locations.\nExternal Storage Content Audit:\nTest: Inspect files written to external storage during app operations.\nExpected result: No sensitive data, such as passwords, personal identifiers, or logs containing confidential information, is stored externally.\nCode Review for Storage Operations:\nTest: Analyze the codebase for storage methods involving external storage.\nExpected result: Only non-sensitive information is written to external storage, and sensitive information is securely stored internally.\nDynamic Testing for Storage Behavior:\nTest: Simulate app scenarios that involve file storage and examine resulting file locations and access permissions.\nExpected result: All sensitive data remains inaccessible to external entities and is securely stored.\nTampering and Data Integrity Testing:\nTest: Modify external storage data and observe the app's handling of altered data.\nExpected result: The app does not rely on or process tampered external storage data, ensuring no compromise in functionality or security.",
-      "controles": "Sensitive data must never be stored in publicly accessible locations, as external storage is globally readable, writable, and modifiable by other applications.",
+      "Validation criteria": "Storage inventory:\nInspect the application container, App Groups, iCloud containers, caches, temporary files, exports, Files integration, document-sharing settings, backups, extensions, and Keychain access groups.\nSensitive-data testing:\nExercise features using representative sensitive data and inspect every resulting storage location and exported artifact.\nProtection review:\nWhere sharing is required, verify data minimization, appropriate Data Protection, encryption when needed, least-privilege recipients, backup and synchronization policy, expiration, and deletion.\nExpected result:\nSensitive data remains in an appropriately protected private location unless sharing is explicitly required and controlled.",
+      "controles": "Sensitive data must not be stored in locations accessible to unrelated applications or users. Data exported from the application sandbox, placed in shared containers, synchronized with cloud services, or exposed through document-sharing mechanisms must be minimized and protected according to its sensitivity.",
       "Flags": [
         "ios_file_sharing_enabled",
         "has_no_public_file_storage"
@@ -9838,10 +9849,10 @@
     },
     {
       "PUID": "SECM-CAT-IDS-064",
-      "Requirement description": "The mobile health application must implement monitoring mechanisms to oversee all data interactions with external storage. Only non-sensitive and validated data may be written to or read from external storage to maintain application security and integrity.",
-      "Source": "Apple Inc., Apple Platform Security [155].",
+      "Requirement description": "The application must inventory and control all transfers of data to or from locations outside its private container. Only necessary data may be shared, and all externally obtained data must be validated before use.",
+      "Source": "OWASP MASVS-STORAGE and MASVS-CODE; Apple Inc., App Sandbox; Apple Inc., App Groups; Apple Inc., security-scoped URLs.",
       "Priority": "Not described",
-      "Rationale": "By actively monitoring external storage operations, the application ensures the protection of its data integrity, prevents unauthorized tampering, and reduces the risk of security breaches due to improper data handling.",
+      "Rationale": "The relevant iOS boundary is the private application container. Transfers through Files, document providers, iCloud, App Groups, extensions, pasteboard, exports, and downloads require explicit data-flow control and input validation. Logging every transfer is not required because doing so may itself expose sensitive information.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -9852,12 +9863,12 @@
       "Importance": "72",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "External Storage Write Monitoring:\nTest: Track all data being written to external storage during app operations.\nExpected result: Only non-sensitive and validated data is stored on external storage.\nExternal Storage Read Validation:\nTest: Inspect the application’s process for reading data from external storage.\nExpected result: Data read from external storage is validated for integrity and complies with the application’s security requirements.\nCode Inspection for External Storage Handling:\nTest: Conduct a code review to identify storage methods involving external storage interactions.\nExpected result: All external storage operations are restricted to non-sensitive data and include validation checks.\nDynamic Testing for Unauthorized Access:\nTest: Simulate unauthorized modifications to external storage and observe app behavior.\nExpected result: The application detects tampering, ignores invalid data, and prevents functionality compromise.\nRuntime Monitoring for External Access:\nTest: Use dynamic tools to monitor runtime behavior for external storage reads and writes.\nExpected result: All storage operations are logged, monitored, and comply with defined security standards.",
-      "controles": "The mobile health application must implement monitoring mechanisms to oversee all data interactions with external storage. Only non-sensitive and validated data may be written to or read from external storage to maintain application security and integrity.",
+      "Validation criteria": "Data-flow inventory:\nDocument reads and writes involving Files, document providers, downloads, iCloud, App Groups, extensions, exports, pasteboard, and other shared locations.\nOutbound testing:\nVerify that only documented, necessary, and appropriately protected data leaves the private container.\nInbound testing:\nModify, replace, truncate, enlarge, and corrupt externally supplied data. Verify strict validation, safe error handling, and rejection before security-sensitive use.\nObservability review:\nWhere security events are recorded, verify that logs contain sufficient metadata for investigation without including sensitive payloads.\nExpected result:\nExternal data flows are necessary, bounded, validated, and do not disclose sensitive data through either storage or monitoring.",
+      "controles": "The application must inventory and control all transfers of data to or from locations outside its private container. Only necessary data may be shared, and all externally obtained data must be validated before use.",
       "Flags": [
         "ios_file_sharing_enabled",
-        "has_collects_telemetry_for_security_events",
-        "has_logs_privileged_actions_with_timestamp"
+        "has_no_public_file_storage",
+        "has_backend_input_validation"
       ]
     },
     {
@@ -9888,10 +9899,10 @@
     },
     {
       "PUID": "SECM-CAT-IDS-066",
-      "Requirement description": "The mobile health application must utilize internal storage for storing sensitive data wherever feasible. This approach eliminates the dependency on external storage and reduces the need for storage-related permissions, enhancing the security of sensitive information",
-      "Source": "Apple Inc., Entitlements [159].",
+      "Requirement description": "Sensitive data must be stored within an appropriately protected iOS application container, Keychain, or Secure Enclave wherever feasible. Use of shared containers, cloud synchronization, exported documents, or other externally accessible locations must be explicitly justified and restricted.",
+      "Source": "OWASP MASVS-STORAGE; Apple Inc., App Sandbox; Apple Inc., Data Protection; Apple Inc., Keychain data protection; Apple Inc., Secure Enclave; Apple Inc., App Groups.",
       "Priority": "Not described",
-      "Rationale": "By using internal storage, the application ensures enhanced protection for sensitive data, minimizing the risk of unauthorized access through external storage mechanisms and complying with secure development practices for mobile health applications.",
+      "Rationale": "iOS and iPadOS protect application data through sandbox containers, Data Protection, Keychain, Secure Enclave, entitlements, and access groups. Sensitive data should remain within the narrowest platform-protected location compatible with the documented use case.",
       "Number of Children": "0",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -9902,12 +9913,14 @@
       "Importance": "72",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Internal Storage Configuration:\nTest: Attempt to access data stored by the app in internal storage using unauthorized external applications.\nExpected result: Unauthorized access to internal storage data is denied.\nPermission Optimization:\nTest: Inspect the app’s manifest for storage-related permissions.\nExpected result: The app does not request unnecessary storage-related permissions.\nSecure Data Handling:\nTest: Verify that sensitive data operations, such as saving or retrieving, are confined to internal storage locations.\nExpected result: Sensitive data is exclusively stored in app-specific directories within internal storage.\nDynamic Testing for Storage Behavior:\nTest: Monitor data storage operations during runtime using debugging tools.\nExpected result: All sensitive data remains restricted to internal storage throughout app operations.\nCode Review for Storage Paths:\nTest: Review the codebase to ensure no sensitive data is written to external storage.\nExpected result: All storage operations involving sensitive data use internal storage paths.",
-      "controles": "The mobile health application must utilize internal storage for storing sensitive data wherever feasible. This approach eliminates the dependency on external storage and reduces the need for storage-related permissions, enhancing the security of sensitive information",
+      "Validation criteria": "Storage mapping:\nMap each sensitive data class to its storage location and required availability. Inspect application-support, documents, library, caches, temporary files, Keychain, Secure Enclave, Core Data stores, App Groups, iCloud containers, and exported files.\nProtection review:\nVerify appropriate Data Protection classes, Keychain accessibility and device-only attributes, backup and synchronization settings, and least-privilege access groups.\nSharing review:\nConfirm that App Groups, document sharing, cloud synchronization, and exports are used only when documented and that shared data is minimized and protected.\nExpected result:\nSensitive data uses the narrowest suitable iOS-protected storage and is not exposed through unnecessary sharing or synchronization.",
+      "controles": "Sensitive data must be stored within an appropriately protected iOS application container, Keychain, or Secure Enclave wherever feasible. Use of shared containers, cloud synchronization, exported documents, or other externally accessible locations must be explicitly justified and restricted.",
       "Flags": [
-        "ios_file_sharing_enabled",
-        "has_requests_only_minimum_permissions",
-        "has_uses_encrypted_filesystem_storage"
+        "has_no_public_file_storage",
+        "has_uses_encrypted_filesystem_storage",
+        "has_data_protection",
+        "has_os_secure_key_storage",
+        "has_minimal_entitlements"
       ]
     },
     {
@@ -10005,10 +10018,10 @@
     },
     {
       "PUID": "SECM-CAT-IDS-073",
-      "Requirement description": "Mobile health applications must utilize secure system credential storage facilities to safeguard sensitive data, including user credentials and cryptographic keys. The application should leverage industry-standard key management practices, storing data using tools like iOS Keychain and Secure Enclave where appropriate, and avoiding direct storage of sensitive data such as passwords on the device.",
-      "Source": "2.1: Verify that system credential storage facilities are used appropriately to store sensitive data, such as user credentials or cryptographic keys [19]. MASVS-CRYPTO-2: The app performs key management according to industry best practices: Even the strongest cryptography would be compromised by poor key management. This control covers the management of cryptographic keys throughout their lifecycle, including key generation, storage and protection [20]. 1.1.Classify data storage according to sensitivity and apply controls accordingly (e.g. passwords, personal data, location, error logs, etc.). Process, store and use data according to its classification [16].\nApple Inc., Security framework [156].\nApple Inc., Keychain data protection [157].\nApple Inc., Protecting keys with the Secure Enclave [166].",
+      "Requirement description": "The application must store reusable credentials, authentication tokens, and cryptographic keys using iOS platform-protected facilities such as Keychain and Secure Enclave, with protection attributes and lifecycle controls appropriate to the data and use case.",
+      "Source": "OWASP MASVS-STORAGE and MASVS-CRYPTO; Apple Inc., Security framework; Apple Inc., Keychain data protection; Apple Inc., Protecting keys with the Secure Enclave.",
       "Priority": "Not described",
-      "Rationale": "Ensuring the secure storage and management of sensitive data and credentials minimizes the risk of unauthorized access, reduces exposure to attacks, and aligns with best practices in cryptographic key management and authentication. This is critical for maintaining user trust and regulatory compliance in mobile health applications.",
+      "Rationale": "Keychain protects small secret values and credentials, while Secure Enclave supports protected non-exportable private-key operations. Correct accessibility, device-only, synchronization, access-group, user-presence, rotation, and deletion settings are necessary throughout the secret lifecycle.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -10019,11 +10032,12 @@
       "Importance": "69",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "System Credential Storage Usage:\nTest: Verify that sensitive data, including user credentials, is stored using secure system storage facilities (e.g., Credential Manager).\nExpected result: Sensitive data is securely stored using platform-recommended mechanisms.\nPasswordless Authentication Implementation:\nTest: Assess the use of passkeys or federated sign-ins for user authentication.\nExpected result: Application supports secure, passwordless authentication methods.\nKey Management Practices Audit:\nTest: Review cryptographic key management practices to ensure adherence to industry standards, including secure generation, storage, and usage.\nExpected result: Keys are managed securely throughout their lifecycle.\nShort-lived Token Verification:\nTest: Inspect the implementation of service-specific short-lived authorization tokens.\nExpected result: Tokens are used in place of passwords for continued user sessions.\nData Classification Review:\nTest: Analyze storage operations to confirm data classification is applied, and controls are implemented according to sensitivity.\nExpected result: Sensitive data is classified and protected according to its sensitivity level.",
-      "controles": "Mobile health applications must utilize secure system credential storage facilities to safeguard sensitive data, including user credentials and cryptographic keys. The application should leverage industry-standard key management practices, storing data using tools like iOS Keychain and Secure Enclave where appropriate, and avoiding direct storage of sensitive data such as passwords on the device.",
+      "Validation criteria": "Secret inventory:\nIdentify reusable credentials, tokens, symmetric keys, private keys, certificates, PIN-derived material, and other secrets. Document purpose, owner, storage, availability requirements, synchronization, backup, rotation, revocation, and deletion.\nKeychain review:\nInspect SecItemAdd, SecItemUpdate, and SecItemCopyMatching usage; kSecAttrAccessible; ThisDeviceOnly variants; kSecAttrSynchronizable; access groups; and SecAccessControl flags. Verify the strongest settings compatible with the documented use case.\nSecure Enclave review:\nWhere supported and appropriate, verify non-exportable private-key generation using Secure Enclave and test user-presence or biometric constraints, enrollment changes, passcode removal, and device lock.\nPlaintext review:\nConfirm that secrets are not stored in UserDefaults, property lists, unprotected files, logs, analytics, crash metadata, pasteboard, source code, or application resources.\nLifecycle testing:\nTest rotation, expiration, revocation, logout, account removal, backup restore, device migration, and reinstall behavior as applicable.\nExpected result:\nReusable secrets remain accessible only in the intended device, application, identity, and lifecycle context.",
+      "controles": "The application must store reusable credentials, authentication tokens, and cryptographic keys using iOS platform-protected facilities such as Keychain and Secure Enclave, with protection attributes and lifecycle controls appropriate to the data and use case.",
       "Flags": [
         "has_os_secure_key_storage",
-        "has_sensitive_data_encrypted_with_os_keystore",
+        "has_keychain_secure_accessibility",
+        "has_keychain_device_only_protection",
         "has_auth_keys_stored_in_secure_hardware",
         "has_stores_auth_tokens_in_plaintext",
         "has_stores_keys_in_plaintext"
@@ -10110,10 +10124,10 @@
     },
     {
       "PUID": "SECM-CAT-IDS-077",
-      "Requirement description": "Cryptographic keys and user credentials must be securely managed throughout their lifecycle, including generation, storage, transmission, and rotation. Keys must be stored using secure OS-provided mechanisms such as Keychain or Keychain.",
-      "Source": "Properly Handle User Credentials: User credentials should always be stored, transmitted, and authenticated securely:\nEncrypt credentials during transmission. Do not store user credentials on the device. Instead, consider using secure, revocable access tokens. Implement strong user authentication protocols. Regularly update and rotate any used API keys or tokens [3]. MASVS-CRYPTO-2: The app performs key management according to industry best practices: Even the strongest cryptography would be compromised by poor key management. This control covers the management of cryptographic keys throughout their lifecycle, including key generation, storage and protection [20]. 1.3.When storing sensitive data on the device, use a file encryption API provided by the OS or other trusted source. If this is available, it should be used as it increases the security of the encryption without creating extra burden on the end-user. It also makes stored data safer in the case of loss or theft. However, it should be borne in mind that even when protected by the device unlock key, if data is stored on the device, its security is dependent on the security of the device unlock code if remote deletion of the key is for any reason not possible [16].\nApple Inc., Keychain data protection [157].\nApple Inc., Preventing Insecure Network Connections [158].\nApple Inc., Protecting keys with the Secure Enclave [166].",
+      "Requirement description": "Cryptographic keys and user credentials must be securely managed throughout their lifecycle, including generation or issuance, storage, use, rotation, revocation, and destruction. Device-held reusable secrets must use Keychain or Secure Enclave where appropriate.",
+      "Source": "OWASP MASVS-CRYPTO and MASVS-STORAGE; Apple Inc., Keychain data protection; Apple Inc., Secure Enclave; Apple Inc., Security framework.",
       "Priority": "Not described",
-      "Rationale": "Improper key and credential management exposes applications to potential security breaches, including unauthorized access, data leaks, and identity theft. Secure storage, encryption, and lifecycle management mitigate these risks and align with healthcare data protection regulations and industry best practices.",
+      "Rationale": "Secure storage is only one part of secret management. Keys and credentials also require controlled creation, least-privilege use, non-exportability where possible, rotation, revocation, deletion, and defined behavior during device and account lifecycle changes.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -10124,8 +10138,8 @@
       "Importance": "67",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Key Storage Audit:\nTest: Verify that all cryptographic keys are securely stored in the Keychain and Secure Enclave where appropriate.\nExpected result: No cryptographic keys are stored in unprotected locations.\nCredential Transmission Security:\nTest: Inspect network traffic to ensure that credentials are encrypted during transmission.\nExpected result: All credentials are transmitted securely using industry-standard encryption (e.g., TLS 1.2 or higher).\nToken Implementation Review:\nTest: Ensure that user authentication utilizes secure, revocable access tokens instead of directly storing user credentials.\nExpected result: Tokens are used exclusively for authentication, and user credentials are not stored on the device.\nKey Rotation Mechanism:\nTest: Review the implementation for automated or manual key and token rotation mechanisms.\nExpected result: Keys and tokens are regularly rotated to reduce the risk of long-term exposure.\nDynamic Testing:\nTest: Conduct penetration testing to identify potential vulnerabilities in key and credential handling during app operations.\nExpected result: No vulnerabilities related to unauthorized access or exposure of keys and credentials are found.",
-      "controles": "Cryptographic keys and user credentials must be securely managed throughout their lifecycle, including generation, storage, transmission, and rotation. Keys must be stored using secure OS-provided mechanisms such as Keychain or Keychain.",
+      "Validation criteria": "Inventory:\nIdentify cryptographic keys, certificates, passwords, tokens, PIN-derived material, and other reusable credentials. Record owner, purpose, algorithm, origin, storage, accessibility, synchronization, backup, rotation, revocation, and destruction.\nGeneration and issuance:\nVerify approved cryptographic generation or authenticated issuance and confirm that secret material is not predictable, shared unnecessarily, or embedded in the application.\nStorage and use:\nInspect Keychain accessibility, device-only attributes, access-control flags, access groups, Secure Enclave use, and exportability. Verify least-privilege access and separation of keys by purpose.\nLifecycle testing:\nTest rotation, expiration, revocation, logout, account removal, passcode changes, biometric enrollment changes, backup migration, device replacement, and compromise response as applicable.\nExpected result:\nEach secret follows a documented, protected, and testable lifecycle without unintended reuse or persistence.",
+      "controles": "Cryptographic keys and user credentials must be securely managed throughout their lifecycle, including generation or issuance, storage, use, rotation, revocation, and destruction. Device-held reusable secrets must use Keychain or Secure Enclave where appropriate.",
       "Flags": [
         "has_org_has_crypto_key_lifecycle_policy",
         "has_defined_key_rotation_policy",
@@ -10137,10 +10151,10 @@
     },
     {
       "PUID": "SECM-CAT-IDS-078",
-      "Requirement description": "Applications must utilize platform-provided key-store mechanisms (e.g., iOS and iPadOS Keychain, iOS Keychain) at the highest supported security level. Keys and sensitive data must be protected using device passcodes, configured to remain inaccessible when the device is locked.",
-      "Source": "3.3.Leverage the provided key-store mechanisms at the highest supported security level and only when a device passcode has been set. If possible, request key-store items to be protected after the device is locked and to remain only in the current device (e.g., exclude these items from backups and cloud synchronization) [16]. Implement Secure Storage Mechanisms: 1. Store sensitive data in secure storage locations that are inaccessible to unauthorized users.\nApple Inc., Security framework [156].\nApple Inc., Keychain data protection [157].",
+      "Requirement description": "Reusable credentials and cryptographic keys stored by the application must use Keychain or Secure Enclave with the strongest accessibility, device-only, access-control, and synchronization settings compatible with the documented use case.",
+      "Source": "OWASP MASVS-STORAGE; Apple Inc., Keychain data protection; Apple Inc., Keychain Services; Apple Inc., Secure Enclave.",
       "Priority": "Not described",
-      "Rationale": "Leveraging native key-store mechanisms ensures sensitive data is stored securely and is protected from unauthorized access. Limiting backup and cloud synchronization further mitigates risks of data compromise, aligning with best practices for safeguarding healthcare information.",
+      "Rationale": "Keychain is designed for small credentials and key material; sensitive files and databases instead require iOS Data Protection. Keychain protection must reflect when the item is needed, whether it may migrate or synchronize, and whether user presence or biometric state must control access.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -10151,8 +10165,8 @@
       "Importance": "67",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Key-Store Integration:\nTest: Inspect the app's implementation of secure storage to ensure that sensitive data is stored exclusively in the Keychain or Keychain.\nExpected result: Sensitive data is securely stored using the highest supported security level of the platform-provided key-store.\nDevice Lock Protection:\nTest: Verify that key-store items are inaccessible when the device is locked.\nExpected result: Keys and sensitive data cannot be accessed while the device is locked.\nBackup and Synchronization Restriction:\nTest: Inspect configurations to ensure key-store items are excluded from backups and cloud synchronization.\nExpected result: No sensitive key-store items are included in backups or synchronized to the cloud.\nDynamic Testing:\nTest: Attempt to access sensitive data through unauthorized means, such as device backups or cloud data.\nExpected result: Sensitive data remains protected and inaccessible to unauthorized users.",
-      "controles": "Applications must utilize platform-provided key-store mechanisms (e.g., iOS and iPadOS Keychain, iOS Keychain) at the highest supported security level. Keys and sensitive data must be protected using device passcodes, configured to remain inaccessible when the device is locked.",
+      "Validation criteria": "Item inventory:\nIdentify every Keychain and Secure Enclave item and document its data class, use while locked, migration requirement, synchronization requirement, access group, and user-authentication requirement.\nAttribute review:\nInspect kSecAttrAccessible, ThisDeviceOnly variants, kSecAttrSynchronizable, SecAccessControl flags, access groups, and Secure Enclave token identifiers. Verify that each choice is the strongest compatible with the documented use case.\nDynamic testing:\nTest access before first unlock, while locked, after reboot, after passcode removal, after biometric enrollment change, after backup restore or device migration, and from unauthorized app-group or access-group clients as applicable.\nStorage boundary:\nConfirm that large sensitive files and databases use appropriate Data Protection rather than being placed in Keychain.\nExpected result:\nCredentials and keys are accessible only in the intended device, lock, identity, and application context.",
+      "controles": "Reusable credentials and cryptographic keys stored by the application must use Keychain or Secure Enclave with the strongest accessibility, device-only, access-control, and synchronization settings compatible with the documented use case.",
       "Flags": [
         "has_os_secure_key_storage",
         "has_sensitive_data_encrypted_with_os_keystore",
@@ -10352,10 +10366,10 @@
     },
     {
       "PUID": "SECM-CAT-ICR-003",
-      "Requirement description": "The application must store passwords only in cryptographic representations, using secure hashing algorithms and salting mechanisms to protect against unauthorized access. Passwords must never be stored in plain text or reversible encrypted formats.",
-      "Source": "Implement V-222542: The application must only store cryptographic representations of passwords [15].",
+      "Requirement description": "If the application or its backend stores user passwords, passwords must be processed with a password-specific, salted, configurable key-derivation function and must never be stored in plaintext, with reversible encryption, or using a single fast general-purpose hash.",
+      "Source": "OWASP Password Storage Cheat Sheet; NIST SP 800-63B; OWASP MASVS-AUTH.",
       "Priority": "Not described",
-      "Rationale": "Storing cryptographic representations of passwords ensures the security and confidentiality of user credentials. This approach mitigates risks of password exposure in the event of data breaches, supporting compliance with best practices for cryptographic security and protecting sensitive health information managed by mobile health applications.",
+      "Rationale": "A unique salt prevents precomputed attacks, while a password-specific KDF with a configurable work factor increases the cost of guessing. Fast hashes such as SHA-256 or SHA-512 alone are unsuitable for password storage even when salted. If the mobile product does not store passwords, the requirement is not applicable to the client and must be assessed at the responsible backend.",
       "Number of Children": "1",
       "Number of Parents": "0",
       "Cycles": "1",
@@ -10366,8 +10380,8 @@
       "Importance": "96",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Password Hashing Verification:\nTest: Validate that passwords are hashed using secure algorithms such as bcrypt, Argon2, or PBKDF2.\nExpected Result: Passwords are hashed using strong, industry-standard algorithms with appropriate parameters for computational hardness.\nSalting Implementation Check:\nTest: Confirm that a unique, randomly generated salt is added to each password before hashing.\nExpected Result: All passwords are salted uniquely, preventing attacks such as rainbow table lookups.\nPlain Text Password Storage Audit:\nTest: Conduct a code review and inspect storage mechanisms to ensure no passwords are stored in plain text or reversible encrypted formats.\nExpected Result: No instances of plain text or insecure password storage are found.\nSecurity Against Hash Collisions:\nTest: Verify the application uses secure hashing algorithms that mitigate collision risks.\nExpected Result: Algorithms implemented ensure low collision probability, enhancing password security.\nData Breach Response Simulation:\nTest: Simulate a data breach scenario to confirm that cryptographically represented passwords remain secure.\nExpected Result: Extracted hashed passwords are computationally infeasible to reverse or compromise.",
-      "controles": "The application must store passwords only in cryptographic representations, using secure hashing algorithms and salting mechanisms to protect against unauthorized access. Passwords must never be stored in plain text or reversible encrypted formats.",
+      "Validation criteria": "Applicability:\nDetermine whether the mobile client or backend stores user passwords or password-derived verifiers. If authentication uses an external identity provider and no component in scope stores passwords, record the requirement as not applicable.\nAlgorithm review:\nVerify use of an approved password KDF such as Argon2id, scrypt, bcrypt, or PBKDF2 with parameters appropriate to current organizational guidance. Reject plaintext, reversible encryption, unsalted hashes, and single-pass general-purpose hashes.\nSalt and parameter review:\nVerify a unique cryptographically random salt per password, stored parameters, versioning, and a migration strategy for increasing work factors.\nOperational testing:\nVerify constant-behavior authentication failure, protected reset flows, and that passwords and derived material do not enter logs or analytics.\nExpected result:\nPasswords in scope are represented only by a suitably parameterized password KDF and unique salt.",
+      "controles": "If the application or its backend stores user passwords, passwords must be processed with a password-specific, salted, configurable key-derivation function and must never be stored in plaintext, with reversible encryption, or using a single fast general-purpose hash.",
       "Flags": [
         "has_password_hashing_uses_kdf",
         "has_password_hashing_uses_salts",
@@ -10399,10 +10413,10 @@
     },
     {
       "PUID": "SECM-CAT-ICR-005",
-      "Requirement description": "The application must employ Key Derivation Functions (KDFs), such as PBKDF2, bcrypt, or scrypt, for password hashing. These functions must include mechanisms like iteration counts and adaptive work factors to enhance security against brute-force attacks and ensure secure derivation of cryptographic keys from user passwords.",
-      "Source": "Use Key Derivation Functions (KDFs): 1. For password hashing, use Key Derivation Functions like PBKDF2, bcrypt, or scrypt. These functions are specifically designed for securely deriving cryptographic keys from passwords and provide additional security features like iteration counts to slow down brute-force attacks [3].",
+      "Requirement description": "Password hashing, where performed by a component in scope, must use an approved password-specific key-derivation function with a configurable work factor, unique salt, parameter versioning, and a documented upgrade strategy.",
+      "Source": "OWASP Password Storage Cheat Sheet; NIST SP 800-63B; OWASP MASVS-AUTH.",
       "Priority": "Not described",
-      "Rationale": "Key Derivation Functions are purpose-built to securely transform user passwords into cryptographic keys. By integrating iteration counts and adaptive mechanisms, KDFs increase computational cost for attackers, reducing the feasibility of brute-force attacks and ensuring compliance with secure password management standards.",
+      "Rationale": "This requirement specifies the KDF properties needed to satisfy secure password storage and is evaluated only where password hashing is actually performed. Fixed universal iteration thresholds become obsolete, so parameters must follow current organizational guidance and be upgradeable.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -10413,8 +10427,8 @@
       "Importance": "95",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Algorithm Verification:\nTest: Inspect the application code to confirm the use of PBKDF2, bcrypt, or scrypt for password hashing.\nExpected Result: Password hashing processes are implemented using one of the specified KDFs.\nIteration Count Testing:\nTest: Verify that the KDF includes a high iteration count to slow down hashing operations for attackers.\nExpected Result: Iteration counts meet industry-recommended thresholds (e.g., 100,000+ iterations for PBKDF2).\nAdaptive Mechanism Review:\nTest: Evaluate whether the KDF supports adaptive mechanisms to allow adjustment of work factors over time.\nExpected Result: The system can increase computational work as processing power advances.\nSecure Key Output Validation:\nTest: Ensure the output of the KDF is cryptographically strong and suitable for secure storage or encryption.\nExpected Result: Derived keys are robust and meet security requirements.\nBrute-Force Resistance Testing:\nTest: Simulate a brute-force attack against hashed passwords to assess resistance.\nExpected Result: Password hashing resists brute-force attacks within acceptable security thresholds.",
-      "controles": "The application must employ Key Derivation Functions (KDFs), such as PBKDF2, bcrypt, or scrypt, for password hashing. These functions must include mechanisms like iteration counts and adaptive work factors to enhance security against brute-force attacks and ensure secure derivation of cryptographic keys from user passwords.",
+      "Validation criteria": "Applicability:\nIdentify the component responsible for password verification. If neither the app nor another component in the assessment scope hashes passwords, record the requirement as not applicable.\nKDF review:\nVerify an approved password KDF such as Argon2id, scrypt, bcrypt, or PBKDF2. Confirm unique random salts and, where supported, protected pepper management.\nParameter review:\nCompare memory, time, parallelism, iteration, and output-length parameters with current organizational guidance for the selected KDF and deployment environment. Do not apply a single fixed iteration count to every algorithm.\nUpgrade testing:\nVerify parameter versioning and rehash-on-authentication or another controlled migration process.\nExpected result:\nThe password verifier is expensive to guess, uniquely salted, configurable, and upgradeable without retaining plaintext passwords.",
+      "controles": "Password hashing, where performed by a component in scope, must use an approved password-specific key-derivation function with a configurable work factor, unique salt, parameter versioning, and a documented upgrade strategy.",
       "Flags": [
         "has_password_hashing_uses_kdf"
       ]
@@ -10766,10 +10780,10 @@
     },
     {
       "PUID": "SECM-CAT-ICR-022",
-      "Requirement description": "The application must utilize a secure and cryptographically strong random number generator, such as SecureRandom, to generate random values for cryptographic purposes, including key initialization, nonce generation, and secure tokens. This ensures the randomness required to maintain encryption strength and protect sensitive data.",
-      "Source": "3.6: Verify that all random values are generated using a sufficiently secure random number generator [19].\nApple Inc., Security framework [156].\nApple Inc., Keychain data protection [157].",
+      "Requirement description": "The application must use cryptographically secure random generation provided by Apple platforms for cryptographic keys, nonces, initialization vectors, authentication tokens, and other security-sensitive values.",
+      "Source": "OWASP MASVS-CRYPTO; Apple Inc., Security framework; Apple Inc., SecRandomCopyBytes; Apple Inc., CryptoKit.",
       "Priority": "Not described",
-      "Rationale": "Using non-secure random number generators can result in predictable values, undermining cryptographic protocols and exposing sensitive data to attacks such as brute force or replay. A secure random number generator provides high entropy and ensures randomness critical for secure encryption and token generation.",
+      "Rationale": "Predictable random values can compromise keys, tokens, nonces, and encrypted data. iOS applications should rely on Security, CryptoKit, SystemRandomNumberGenerator, or APIs that internally provide cryptographically secure generation.",
       "Number of Children": "1",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -10780,18 +10794,18 @@
       "Importance": "87",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Random Number Source Validation:\nTest: Inspect the application's random number generation methods to ensure the use of a secure generator like SecureRandom.\nExpected Result: The application consistently uses secure random number generators for all cryptographic operations.\nEntropy Verification:\nTest: Evaluate the entropy of generated random values using statistical tests to ensure high randomness.\nExpected Result: Random values exhibit high entropy and do not follow predictable patterns.\nKey Generation Audit:\nTest: Verify that all cryptographic keys are initialized using a secure random number generator.\nExpected Result: Keys are securely generated with no predictable or reused values.\nToken Security Test:\nTest: Analyze generated tokens or nonces for randomness and resistance to replay or guessing attacks.\nExpected Result: Tokens are unpredictable and unique for each session or operation.\nPenetration Testing for Randomness Weakness:\nTest: Conduct security testing to identify potential weaknesses in the application’s random value generation process.\nExpected Result: The application demonstrates resilience to attacks targeting randomness vulnerabilities.\nLogging and Monitoring of Randomness Failures:\nTest: Verify that the application logs and alerts on any detected failures in random number generation.\nExpected Result: Failures or abnormalities in randomness generation are logged and trigger security alerts.",
-      "controles": "The application must utilize a secure and cryptographically strong random number generator, such as SecureRandom, to generate random values for cryptographic purposes, including key initialization, nonce generation, and secure tokens. This ensures the randomness required to maintain encryption strength and protect sensitive data.",
+      "Validation criteria": "Usage inventory:\nIdentify generation of keys, nonces, IVs, salts, session identifiers, one-time values, and security tokens.\nAPI review:\nVerify use of SecRandomCopyBytes, SystemRandomNumberGenerator, CryptoKit, Security-framework key generation, Secure Enclave, or another documented cryptographically secure Apple API.\nWeak-source review:\nConfirm that Random, arc4random, rand, timestamps, UUID formatting assumptions, counters, or custom pseudo-random algorithms are not used where cryptographic unpredictability is required.\nUniqueness testing:\nFor protocols that require uniqueness as well as unpredictability, test nonce, IV, token, and identifier lifecycle and rejection of reuse.\nFailure handling:\nVerify that random-generation failure aborts the security-sensitive operation without falling back to a predictable value and without logging secret material.\nExpected result:\nAll security-sensitive random values originate from a suitable Apple cryptographic facility and satisfy their protocol-specific uniqueness and unpredictability requirements.",
+      "controles": "The application must use cryptographically secure random generation provided by Apple platforms for cryptographic keys, nonces, initialization vectors, authentication tokens, and other security-sensitive values.",
       "Flags": [
         "ios_insecure_random"
       ]
     },
     {
       "PUID": "SECM-CAT-ICR-023",
-      "Requirement description": "The application must ensure that Initialization Vectors (IVs) or counters used in CTR (Counter) mode encryption are cryptographically random and never reused. This protects the confidentiality and integrity of encrypted data by preventing vulnerabilities related to predictability or repeated usage of cryptographic parameters.",
-      "Source": "Apple Inc., Security framework [156].\nApple Inc., Keychain data protection [157].",
+      "Requirement description": "Nonces, initialization vectors, and counters must satisfy the uniqueness and unpredictability requirements of the selected cryptographic construction. Values must never be reused with the same key where the construction forbids reuse, and encryption must provide integrity through an authenticated mode or a correctly composed authentication mechanism.",
+      "Source": "NIST SP 800-38A; NIST SP 800-38D; OWASP MASVS-CRYPTO; Apple Inc., CryptoKit; Apple Inc., Security framework.",
       "Priority": "Not described",
-      "Rationale": "Using non-secure random number generators can result in predictable values, undermining cryptographic protocols and exposing sensitive data to attacks such as brute force or replay. A secure random number generator provides high entropy and ensures randomness critical for secure encryption and token generation.",
+      "Rationale": "CTR mode primarily requires a unique counter block for every message under the same key; randomness is one possible construction but is not the only valid one. CTR encryption does not provide integrity by itself, so sensitive data should normally use an authenticated construction such as AES-GCM or ChaChaPoly unless a reviewed encrypt-then-MAC design is required.",
       "Number of Children": "0",
       "Number of Parents": "1",
       "Cycles": "1",
@@ -10802,8 +10816,8 @@
       "Importance": "87",
       "Current state": "To_be_determined",
       "Verification method": "Demonstration/Analysis",
-      "Validation criteria": "Randomness Audit:\nTest: Verify that IVs or counters are generated using secure random number generators, such as SecureRandom.\nExpected Result: Generated IVs and counters exhibit cryptographic randomness and high entropy.\nReplay Attack Simulation:\nTest: Simulate a replay attack to ensure the application does not accept reused IVs or counters.\nExpected Result: The application rejects reused IVs or counters, ensuring data integrity.\nCode Review for Counter Reuse:\nTest: Conduct a thorough review of the codebase to ensure no instances of counter reuse exist.\nExpected Result: All counters and IVs are unique and securely generated for each operation.\nDynamic Encryption Testing:\nTest: Perform runtime testing of the encryption module to observe IV/counter generation during operations.\nExpected Result: Encryption consistently generates unique, random IVs or counters without reuse.\nIntegrity Validation Post-Encryption:\nTest: Verify the integrity and security of encrypted data when processed using CTR mode with generated IVs/counters.\nExpected Result: Data remains secure and resistant to cryptographic analysis or attacks.",
-      "controles": "The application must ensure that Initialization Vectors (IVs) or counters used in CTR (Counter) mode encryption are cryptographically random and never reused. This protects the confidentiality and integrity of encrypted data by preventing vulnerabilities related to predictability or repeated usage of cryptographic parameters.",
+      "Validation criteria": "Construction inventory:\nIdentify every use of AES-CTR, AES-GCM, ChaChaPoly, CBC, or another stateful encryption construction and document its nonce or IV requirements.\nGeneration review:\nVerify that values are produced by the cryptographic API or by a construction that guarantees the protocol-specific uniqueness and unpredictability properties. For CTR, confirm that counter blocks cannot repeat under the same key.\nLifecycle and concurrency testing:\nTest process restart, restore, rollback, concurrent encryption, key rotation, and error recovery for reuse. Review persistence and synchronization of counters where applicable.\nIntegrity review:\nVerify use of authenticated encryption or a reviewed encrypt-then-MAC construction. Confirm that authentication is checked before plaintext is processed and that failures return no unauthenticated plaintext.\nExpected result:\nNo prohibited nonce, IV, or counter reuse occurs and modified ciphertext is rejected.",
+      "controles": "Nonces, initialization vectors, and counters must satisfy the uniqueness and unpredictability requirements of the selected cryptographic construction. Values must never be reused with the same key where the construction forbids reuse, and encryption must provide integrity through an authenticated mode or a correctly composed authentication mechanism.",
       "Flags": [
         "ios_insecure_random"
       ]
